@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -22,5 +23,15 @@ Route::view('dashboard', 'dashboard')
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
+
+    // Project Index Page
+    Route::view('projects', 'projects.index')
+    ->middleware(['auth'])
+    ->name('projects.index');
+    Route::view('projects/create', 'projects.create')
+    ->middleware(['auth'])
+    ->name('projects.create');
+  
+
 
 require __DIR__.'/auth.php';

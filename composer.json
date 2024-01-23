@@ -11,8 +11,10 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
-        "livewire/livewire": "^3.0",
-        "livewire/volt": "^1.0"
+        "livewire/livewire": "^3.3",
+        "livewire/volt": "^1.6",
+        "mkocansey/bladewind": "^2.4",
+        "robsontenorio/mary": "^1.19"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -39,7 +41,9 @@
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan vendor:publish --tag=laravel-assets --ansi"
+          
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
