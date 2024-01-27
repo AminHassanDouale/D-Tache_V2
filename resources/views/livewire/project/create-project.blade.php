@@ -18,7 +18,7 @@ new class extends Component {
     use Toast;
 
 public $files = [];
-    public $name, $description, $status_id, $amount, $priority, $start_date, $due_date, $remark, $user_id, $department_id;
+    public $name, $description, $status_id, $amount, $priority, $start_date, $due_date, $remark, $user_id, $department_id, $project_id;
     public $statuses; 
     public $users;
     public $tags = [];
@@ -129,7 +129,9 @@ return redirect()->to('/projects');
     <x-header title="Create Post" separator />
 
     <div class="grid gap-10 lg:grid-cols-4">
+
         <x-form wire:submit="submit" class="col-span-3">
+            <x-errors title="Oops!" description="Please, fix the errors below." />
             <x-input label="Name" wire:model="name" inline />
 
 

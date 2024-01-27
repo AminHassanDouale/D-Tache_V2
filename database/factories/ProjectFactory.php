@@ -22,7 +22,7 @@ class ProjectFactory extends Factory
     public function definition(): array
     {
         return [
-            'uuid' => Str::uuid(),
+            'id' => Str::uuid(),
             'name' => $this->faker->sentence,
             'description' => $this->faker->paragraph,
             'status_id' => $this->faker->numberBetween(1, 3), // Assuming you have status IDs from 1 to 10

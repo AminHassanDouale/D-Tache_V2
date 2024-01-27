@@ -34,4 +34,15 @@ Route::view('profile', 'profile')
   
 
 
+
+    //tasks Index
+
+    Route::view('tasks', 'tasks.index')
+    ->middleware(['auth'])
+    ->name('tasks.index');
+     Route::view('tasks/create', 'tasks.create')
+    ->middleware(['auth'])
+    ->name('tasks.create');
+
+
 require __DIR__.'/auth.php';

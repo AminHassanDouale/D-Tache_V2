@@ -20,7 +20,7 @@ class Project extends Model
         'start_date' => 'date',
         'due_date' => 'date',
     ];
-
+ 
     public function members()
     {
         return $this->morphMany(Member::class, 'model');
@@ -41,4 +41,8 @@ class Project extends Model
         {
             return $this->belongsTo(Department::class, 'department_id');
         }
+        public function tasks()
+{
+    return $this->hasMany(Task::class);
+}
 }
