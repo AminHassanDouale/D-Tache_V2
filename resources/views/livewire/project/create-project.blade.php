@@ -167,8 +167,6 @@ return redirect()->to('/projects');
                 <x-file wire:model="files" label="Documents" multiple id="fileInput" />
                 @error('files.*') <span class="error">{{ $message }}</span> @enderror
             </div>
-        
-            
             <x-input label="Remark" wire:model="remark" class="rounded" inline />
             <x-tags label="Tags" wire:model="tags" icon="o-home" hint="Hit enter to create a new tag" />
 
@@ -192,10 +190,6 @@ function toggleWelcomeMessage(isPublic) {
     }
 }
 
-document.addEventListener('livewire:load', function () {
-        Livewire.on('fileInputReset', function () {
-            document.getElementById('fileInput').value = '';
-        });
-    });
+
 </script>
 

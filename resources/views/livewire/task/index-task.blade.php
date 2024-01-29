@@ -9,11 +9,24 @@ use App\Models\Department;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Project;
 use Carbon\Carbon;
+use Mary\Traits\Toast;
+use Livewire\Attributes\Url;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use App\Mail\TaskCreatedMail;
+use Illuminate\Support\Facades\Mail;
+
+
 
 
 new class extends Component {
     use WithPagination;
-    
+    use Toast;
+     #[Url]
+     public string $search = '';
+     protected $queryString = ['search' => ['except' => '']];
+
+
     public bool $myPersistentModal = false;
     public $name, $description,$priority, $status_id, $notification = false, $assignee_id, $start_date, $end_date, $user_id, $department_id, $project_id;
     public $statuses;
@@ -40,6 +53,12 @@ new class extends Component {
             ['key' => 'status_id', 'label' => 'Status'],
         ];
     }
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    
 
     public function saveTask()
     {
@@ -47,13 +66,12 @@ new class extends Component {
         $validatedData = $this->validate([
             'name' => 'required|string',
             'description' => 'required|string',
-            'status_id' => 'required',
+            'status_id' => '',
             'tags' => '',
-            'priority' => 'required|in:1,2,3,4',
+            'priority' => 'nullable|in:1,2,3,4',
             'notification' => 'boolean',
             'assignee_id' => 'nullable|exists:users,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
             'project_id' => 'required|uuid|exists:projects,id', // Ensure 'id' is the UUID in your projects table
 
         ]);
@@ -73,8 +91,37 @@ new class extends Component {
             'user_id' => Auth::id(),
             'department_id' => Auth::user()->department_id,
         ]);
-        $this->resetForm();
+        $this->toast(
+            type: 'success',
+            title: 'ce fait!',
+            description: null,                  // optional (text)
+            position: 'toast-top toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-success',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
+        if ($task->assignee_id) {
+        $assignee = User::find($task->assignee_id);
+        $creator = User::find($task->user_id); // Assuming user_id is the creator's ID
+        $project = Project::find($task->project_id);
+
+        // Prepare the email data
+        $emailData = [
+            'task' => $task,
+            'assignee' => $assignee,
+            'creator' => $creator,
+            'project' => $project,
+        ];
+
+        // Send the email
+        Mail::to($assignee->email)->send(new TaskCreatedMail($emailData));
     }
+        $this->resetForm();
+
+
+    }
+
         private function resetForm()
 {
     $this->name = '';
@@ -88,53 +135,134 @@ new class extends Component {
     $this->project_id = null;
     $this->notification = false;
 }
+
+
+public function with(): array
+    {
+        return [
+            'tasks' => Task::orderBy('created_at', 'asc')->paginate(10),
+        ];
+    }
     
 }; ?>
+
+
 
 <div>
     
  
+<div class="container p-4 mx-auto mt-10 bg-white rounded-lg shadow-md">
+    <div class="flex flex-col items-center justify-between mb-6 md:flex-row">
+        <input type="text" placeholder="Search ..." 
+               class="border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+               />
+        <button class="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600" wire:click="$set('myPersistentModal', true)">Add New</button>
+    </div>
 
-{{-- Notice `sort-by` --}}
+    <div class="overflow-x-auto">
+        <table class="min-w-full leading-normal">
+        <thead>
+            <tr>
+                <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase border-b-2 border-gray-200">
+                    Name
+                </th>
+                <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase border-b-2 border-gray-200">
+                    Assigned
+                </th>
+                <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase border-b-2 border-gray-200">
+                    Status
+                </th>
+                <th class="px-5 py-3 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase border-b-2 border-gray-200">
+                    Date
+                </th>
+                <th class="px-5 py-3 text-xs font-semibold tracking-wider text-center text-gray-600 uppercase border-b-2 border-gray-200">
+                    Remaining 
+                </th> <th class="px-5 py-3 text-xs font-semibold tracking-wider text-left text-gray-600 uppercase border-b-2 border-gray-200">
+                    Action
+                </th>
+                
 
-    <x-button label="Livewire" class="btn-primary" wire:click="$toggle('myPersistentModal')" />
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($tasks as $task)
+            <tr>
+                <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    {{ $task->name }}
+                </td>
+                <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    {{ optional($task->assignee)->name ?? 'Not Assigned' }}
+
+                </td>
+                <td class="px-5 py-5 text-sm border-b border-gray-200">
+                    <span class="inline-flex px-2 text-xs font-semibold leading-5 
+                        {{ $task->status_id == 1 ? 'bg-blue-100 text-blue-800' : 
+                           ($task->status_id == 2 ? 'bg-yellow-100 text-yellow-800' : 
+                           ($task->status_id == 3 ? 'bg-green-100 text-green-800' : 
+                           'bg-gray-100 text-gray-800')) }} rounded-full">
+                        {{ optional($task->status)->name ?? 'No Status' }}
+                    </span>
+                </td>
+               
+                
+                
+                <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    @php
+                        $now = \Carbon\Carbon::now();
+                        $startDateExpired = $now->greaterThanOrEqualTo($task->start_date);
+                        $endDateExpired = $now->greaterThanOrEqualTo($task->end_date);
+                        $isExpired = $startDateExpired && $endDateExpired && $task->status_id != 3;
+                    @endphp
+            
+                    <span class="{{ $isExpired ? 'blink-red' : '' }}">
+                        {{ optional($task->start_date)->format('d/m H:i A') }} - {{ optional($task->end_date)->format('d/m H:i A') }}
+                        @if($isExpired)
+                            <span> (Expired)</span>
+                        @endif
+                    </span>
+                </td>
+            
+                <td class="px-5 py-5 text-sm bg-white border-b border-gray-200">
+                    @php
+                    $now = \Carbon\Carbon::now();
+                    $endDate = $task->end_date;
+                    $isExpired = $now->greaterThanOrEqualTo($endDate) && $task->status_id != 3;
+                    $timeRemainingText = $isExpired ? 'EXPIRED' : $now->diffForHumans($endDate, true);
+                @endphp
+        
+                <span class="{{ $isExpired ? 'blink-red' : '' }}">
+                    {{ $timeRemainingText }}
+                </span>
+                </td>
+                <td>
+                    <a class="text-indigo-600 hover:text-indigo-900" href="{{ route('tasks.edit', $task) }}">Edit</a>
+                    <a class="text-green-600 hover:text-indigo-900" href="{{ route('tasks.show', $task) }}">Show</a>
+
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+    </div>
+    {{ $tasks->links() }}
+</div>
+
  
-{{-- Alpine: no network request --}}
-<x-button label="Alpine" class="btn-warning" @click="$wire.myPersistentModal = true" />
- 
-{{-- Notice `persistent` --}}
 <x-modal wire:model="myPersistentModal" title="Persistent" separator persistent>
-    
+
     <form wire:submit.prevent="saveTask">
         <x-errors title="Oops!" description="Please, fix the errors below." />
-        
-            <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
-            <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
-            <x-select label="" icon="o-bell"  :options="$statuses" wire:model="status_id" inline />
-
-        <select label="priorities" wire:model="priority"  class="px-10 py-2 mt-2 rounded shadow">
-            <option value="">Choisie a Priorite</option>
-            @foreach($priorities as $priority)
-                <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
-            @endforeach
-        </select>
-        <x-select label="Etiquettes" icon="o-user" :options="$users" wire:model="assignee_id" />
-        <x-datetime label="Date + Time" wire:model.defer="start_date" icon="o-calendar" type="datetime-local" />
-        <x-datetime label="Date + Time" wire:model.defer="end_date" icon="o-calendar" type="datetime-local" />
-        <x-tags label="Tags" wire:model="tags" icon="o-home" hint="Hit enter to create a new tag" />
-        <x-select label="Projects" icon="o-key" :options="$projects" wire:model="project_id" />
-        <x-checkbox label="Send Notification" wire:model.defer="notification" class="mt-12" />
-
-    
-    <x-slot:actions>
+        <x-input label="Task Name" wire:model.live.debounce="name" placeholder="Enter task name" />
+        <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
+        <x-select label="Etiquettes" icon="o-user" :options="$users" wire:model="assignee_id" placeholder="Select a user" />
+        <x-select label="Projects" icon="o-key" :options="$projects" wire:model="project_id" placeholder="Project" />
         <x-button label="Cancel" @click="$wire.myPersistentModal = false" />
-        <x-button label="Create" type="submit" icon="o-paper-airplane" class="btn-primary" spinner="save" />
-
-    </x-slot:actions>
+        <x-button label="Create" wire:click="saveTask" icon="o-paper-airplane" class="btn-primary" spinner />
+        <x-hr target="saveTask" />
 </form>
 </x-modal>
     
     <div>
     
-        {{-- Livewire Pagination Links --}}
+   
     </div>

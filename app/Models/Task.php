@@ -13,8 +13,8 @@ class Task extends Model
     protected $fillable = ['name', 'description','priority', 'status_id', 'notification', 'assignee_id', 'start_date', 'end_date', 'user_id', 'department_id','project_id','tags','status_updated_at'];
     protected $casts = [
         'tags' => 'array',
-        'start_date' => 'date',
-        'due_date' => 'date',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
     protected static function boot()
     {
@@ -44,10 +44,19 @@ public function user()
 {
     return $this->belongsTo(User::class, 'user_id');
 }
-public function assignee()
+ public function assignee()
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
+    }
+    public function files()
 {
-    return $this->belongsTo(User::class, 'assignee_id');
+    return $this->hasMany(File::class, 'model_id')->where('model_type', Task::class);
 }
+   public function comments()
+    {
+        return $this->morphMany(Comment::class, 'model');
+    }
+
 
 
 }

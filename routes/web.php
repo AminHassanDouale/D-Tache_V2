@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\FileController;
 use Illuminate\Support\Facades\Route;
-
+use Livewire\Volt\Volt;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,7 +31,11 @@ Route::view('profile', 'profile')
     ->name('projects.index');
     Route::view('projects/create', 'projects.create')
     ->middleware(['auth'])
-    ->name('projects.create');
+    ->name('projects.create'); 
+    
+    Volt::route('projects/{project}/edit', 'project.edit-project')
+    ->middleware(['auth'])
+    ->name('projects.edit');
   
 
 
@@ -40,9 +45,15 @@ Route::view('profile', 'profile')
     Route::view('tasks', 'tasks.index')
     ->middleware(['auth'])
     ->name('tasks.index');
-     Route::view('tasks/create', 'tasks.create')
+    Volt::route('tasks/{task}/edit', 'task.edit-task')
     ->middleware(['auth'])
-    ->name('tasks.create');
+    ->name('tasks.edit');
 
+    Volt::route('tasks/{task}/show', 'task.show-task')
+    ->middleware(['auth'])
+    ->name('tasks.show');
+
+//file 
+Route::post('/upload-files/{task}', [FileController::class, 'store'])->name('file.store');
 
 require __DIR__.'/auth.php';

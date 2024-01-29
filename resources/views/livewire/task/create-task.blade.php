@@ -79,31 +79,45 @@ new class extends Component {
 }
 }; ?>
 
-<div>
-    <div>
-        <form wire:submit.prevent="saveTask">
-            <x-errors title="Oops!" description="Please, fix the errors below." />
-            
-                <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
-                <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
-                <x-select label="" icon="o-bell"  :options="$statuses" wire:model="status_id" inline />
+    <form wire:submit.prevent="saveTask">
+        <x-errors title="Oops!" description="Please, fix the errors below." />
 
-            <select label="priorities" wire:model="priority"  class="px-10 py-2 mt-2 rounded shadow">
-                <option value="">Choisie a Priorite</option>
-                @foreach($priorities as $priority)
-                    <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
-                @endforeach
-            </select>
-            <x-select label="Etiquettes" icon="o-user" :options="$users" wire:model="assignee_id" />
-            <x-datetime label="Date + Time" wire:model.defer="start_date" icon="o-calendar" type="datetime-local" />
-            <x-datetime label="Date + Time" wire:model.defer="end_date" icon="o-calendar" type="datetime-local" />
-            <x-tags label="Tags" wire:model="tags" icon="o-home" hint="Hit enter to create a new tag" />
-            <x-select label="Projects" icon="o-key" :options="$projects" wire:model="project_id" />
-            <x-checkbox label="Send Notification" wire:model.defer="notification" class="mt-12" />
+        <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
+        <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
 
-                <x-button label="Cancel" link="/" class="mt-10"/>
-                <x-button label="Create" type="submit" icon="o-paper-airplane" class="btn-primary" spinner="save" />
-        </form>
-    </div>
-    
+        <x-select label="Priority" wire:model="priority">
+            @foreach ($priorities as $priority)
+                <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
+            @endforeach
+        </x-select>
+
+        <x-select label="Status" wire:model="status_id">
+            @foreach ($statuses as $status)
+                <option value="{{ $status->id }}">{{ $status->name }}</option>
+            @endforeach
+        </x-select>
+
+        <x-select label="Assignee" wire:model="assignee_id">
+            @foreach ($users as $user)
+                <option value="{{ $user->id }}">{{ $user->name }}</option>
+            @endforeach
+        </x-select>
+
+        <x-datetime label="Start Date" wire:model.defer="start_date" type="datetime-local" />
+        <x-datetime label="End Date" wire:model.defer="end_date" type="datetime-local" />
+
+        <x-tags label="Tags" wire:model="tags" hint="Hit enter to create a new tag" />
+        
+        <x-select label="Project" wire:model="project_id">
+            @foreach ($projects as $project)
+                <option value="{{ $project->id }}">{{ $project->name }}</option>
+            @endforeach
+        </x-select>
+
+        <x-checkbox label="Send Notification" wire:model.defer="notification" />
+
+        <x-button label="Cancel" link="/" class="mt-10"/>
+        <x-button label="Save Changes" type="submit" icon="o-paper-airplane" class="btn-primary" />
+    </form>
 </div>
+
