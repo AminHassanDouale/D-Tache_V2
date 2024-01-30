@@ -4,10 +4,13 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use App\Models\Task;
 use App\Models\Project;
+use App\Models\Member;
 use App\Models\File;
 use App\Models\Status;
 use App\Models\User;
 use App\Models\Department;
+use App\Mail\Project\MemberAddedToProjectMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;  // Required for file uploads
 use Carbon\Carbon;
@@ -21,8 +24,10 @@ new #[Layout('layouts.app')] class extends Component {
     public $files = [];
     public $name, $description,$priority, $status_id, $notification = false, $assignee_id, $start_date, $due_date, $user_id, $department_id, $project_id;
     public $statuses;
+    public $privacy = '';
     public $users;
     public $tags = [];
+    public $selectedUser = [];
     public $projects;
     public $priorities = [
         ['value' => '1', 'label' => '🚩 Priority 1'], // Red flag emoji
@@ -34,8 +39,8 @@ new #[Layout('layouts.app')] class extends Component {
     public function mount(Project $project)
     {
         $this->project = $project;
+        $this->loadNonMemberUsers();
         $this->loadProjectProperties();
-
     }
     private function loadProjectProperties()
 {
@@ -120,13 +125,63 @@ public function handleFileUploads() {
     if ($file && $file->user_id === auth()->id()) {
         
         $file->delete(); 
+        $this->toast('success', 'Files deleted successfully.');
+
     }
 }
+public function addedMember()
+{
+    if ($this->privacy == 2) {
+
+    $this->validate([
+        'selectedUser' => 'required|exists:users,id' // Make sure a user is selected and exists
+    ]);
+
+    // Check if the user is already a member
+    if(!$this->project->members()->where('user_id', $this->selectedUser)->exists()) {
+        Member::create([
+            'model_id' => $this->project->id,
+            'model_type' => Project::class,
+            'user_id' => $this->selectedUser,
+            'department_id' => Auth::user()->department_id,
+            'date' => Carbon::now(), // Use Carbon::now() or similar
+        ]);
+        $this->project->load('members.user');
+        $this->loadNonMemberUsers(); // Refresh non-member users
+
+            $this->toast('success', 'Member added successfully.');
+            $user = User::findOrFail($this->selectedUser);
+        Mail::to($user->email)->send(new MemberAddedToProjectMail($this->project, $user));
+        
+            $this->selectedUser = null; // Reset after adding
+        } else {
+            $this->toast('error', 'This user is already a member of the project.');
+        }
+    } else {
+        $this->toast('error', 'Members cannot be added to a private project.');
+    }
+}
+
+public function deleteMember($memberId)
+{
+    $member = Member::find($memberId);
+
+        
+        $member->delete(); 
+        $this->toast('error', 'A Member Has Been Removed.');
+
+}
+private function loadNonMemberUsers() {
+        $existingMemberIds = $this->project->members->pluck('user_id')->toArray();
+        $this->users = User::whereNotIn('id', $existingMemberIds)->orderBy('name', 'ASC')->get();
+    }
     
 }; ?>
 
 <div>
-    <div class="flex justify-center">
+    <x-header title="Project Edit" separator progress-indicator />
+
+    <div class="flex justify-center pt-20">
         <div class="w-2/4 p-6 bg-white shadow-md rounded-xl">
         
         
@@ -134,7 +189,7 @@ public function handleFileUploads() {
                 <!-- Other task fields -->
                 <x-errors title="Oops!" description="Please, fix the errors below." />
         
-                <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
+                <x-input label="Project Name" wire:model.defer="name" placeholder="Enter Project name" />
                 <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
         
                 <label for="priority">Priority</label>
@@ -159,8 +214,46 @@ public function handleFileUploads() {
                 <x-button label="Save Changes" spinner="saveTask" type="submit" icon="o-paper-airplane" class="btn-primary" />
             </form>
         </div>
-
+      
+        
         <div class="mt-4">
+
+            <div>
+                <input type="radio" wire:model="privacy" class="radio" value="1" {{ $project->privacy == 1 ? 'checked' : '' }} onclick="toggleWelcomeMessage(false)"/> Private 
+                <input type="radio" wire:model="privacy" class="radio" value="2" {{ $project->privacy == 2 ? 'checked' : '' }} onclick="toggleWelcomeMessage(true)"/> Public
+                <div>
+                    <div class="mt-4">
+                        <label for="memberSelect" class="block text-sm font-medium text-gray-700">Add Member</label>
+                        <select id="memberSelect" wire:model="selectedUser" class="block w-full py-2 pl-3 pr-10 mt-1 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">Select Member</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('selectedUser') <span class="text-red-500 error">{{ $message }}</span> @enderror
+    
+                        <!-- Trigger for adding member -->
+                        <x-button wire:click.prevent="addedMember" class="mt-2">Add Member</x-button>
+                    </div>
+                </div>
+                
+                @if ($project->privacy == 2)
+                    <div id="welcomeMessage" class="flex items-center mt-2 space-x-3">
+                        @forelse ($project->members as $member)
+                            <div class="flex overflow-hidden">
+                                <ul>
+                                    <li> {{ $member->user->name }} - 
+                                        <x-button icon="o-trash" wire:click="deleteMember({{ $member->id }})" spinner class="btn-sm"></x-button>
+                                    </li>
+                                </ul>
+                            </div>
+                        @empty
+                            <span class="text-sm italic text-gray-500">No members assigned</span>
+                        @endforelse
+                    </div>
+                @endif
+            </div>
+            
             <form wire:submit.prevent="saveProject">
         
                 <div>
@@ -190,4 +283,9 @@ public function handleFileUploads() {
         
     </div>
         </div>
-        
+        <script>
+            function toggleWelcomeMessage(isPublic) {
+                var welcomeMessage = document.getElementById('welcomeMessage');
+                welcomeMessage.style.display = isPublic ? 'block' : 'none';
+            }
+            </script>

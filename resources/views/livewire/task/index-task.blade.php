@@ -215,7 +215,7 @@ public function with(): array
                     @endphp
             
                     <span class="{{ $isExpired ? 'blink-red' : '' }}">
-                        {{ optional($task->start_date)->format('d/m H:i A') }} - {{ optional($task->end_date)->format('d/m H:i A') }}
+                        {{ optional($task->start_date)->format('d/m') }} - {{ optional($task->end_date)->format('d/m') }}
                         @if($isExpired)
                             <span> (Expired)</span>
                         @endif

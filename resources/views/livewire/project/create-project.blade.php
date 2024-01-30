@@ -119,66 +119,53 @@ public $files = [];
 $this->resetform();
 $this->files = [];
 
-session()->flash('message', 'Project created successfully.');
 return redirect()->to('/projects');
 
 }
 }; ?>
-
 <div>
-    <x-header title="Create Post" separator />
 
-    <div class="grid gap-10 lg:grid-cols-4">
-
-        <x-form wire:submit="submit" class="col-span-3">
+    <div class="grid grid-cols-1 gap-10 lg:grid-cols-2">
+        <div>
+            <x-form wire:submit="submit">
+            <!-- First Column -->
             <x-errors title="Oops!" description="Please, fix the errors below." />
-            <x-input label="Name" wire:model="name" inline />
-
-
-            <x-textarea  label="Description"
-            wire:model="description"
-            placeholder="Place Enter Description ..."
-            hint="Max 1000 chars"
-            rows="20"
-             />
-
-            <input type="radio" wire:model="privacy" class="radio" value="1" onclick="toggleWelcomeMessage(false)"/> Private 
-            <input type="radio" wire:model="privacy" class="radio" value="2" onclick="toggleWelcomeMessage(true)"/> Public
-            <div id="welcomeMessage" class="hidden">
-            
-                        <x-choices
-    label="Searchable + Multiple"
-    wire:model="selectedUsers"
-    :options="$users"
-    search-function="searchMulti"
-    no-result-text="Ops! Nothing here ..."
-    searchable />
-                    
-            </div>
-            <x-select label="" icon="o-bell"  :options="$statuses" wire:model="status_id" inline />
-            <select wire:model="priority"  class="px-4 py-2 mt-2 rounded shadow">
+            <x-input label="Name" wire:model="name" />
+            <x-textarea label="Description"
+                wire:model="description"
+                placeholder="Place Enter Description ..."
+                rows="5"
+            />
+            <select wire:model="priority" class="px-4 py-2 rounded shadow">
                 <option value="">Select Priority</option>
                 @foreach($priorities as $priority)
                     <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
                 @endforeach
             </select>
-
-            <div>
+        </div>
+    
+        <div>
+            <!-- Second Column -->
+            <div class="mt-4 lg:mt-0">
+                <input type="radio" wire:model="privacy" class="radio" value="1" onclick="toggleWelcomeMessage(false)"/> Private 
+                <input type="radio" wire:model="privacy" class="radio" value="2" onclick="toggleWelcomeMessage(true)"/> Public
+                <div id="welcomeMessage" class="hidden">
+                    <x-choices label="Choisir De Membre" wire:model="selectedUsers" :options="$users" />
+                </div>
+                <x-select label="Status" icon="o-bell" :options="$statuses" wire:model="status_id" />
                 <x-file wire:model="files" label="Documents" multiple id="fileInput" />
                 @error('files.*') <span class="error">{{ $message }}</span> @enderror
+                <x-input label="Remark" wire:model="remark" />
+                <x-tags label="Tags" wire:model="tags" icon="o-home" hint="Hit enter to create a new tag"  />
             </div>
-            <x-input label="Remark" wire:model="remark" class="rounded" inline />
-            <x-tags label="Tags" wire:model="tags" icon="o-home" hint="Hit enter to create a new tag" />
-
-
-
-            <x-slot:actions>
-                <x-button label="Cancel" link="/" />
-                <x-button label="Create" type="submit" icon="o-paper-airplane" class="btn-primary" spinner="save" />
-            </x-slot:actions>
-        </x-form>
-        
+        </div>
     </div>
+    
+    <x-slot:actions>
+        <x-button label="Cancel" link="/projects" />
+        <x-button label="Create" type="submit" icon="o-paper-airplane" class="btn-primary" spinner="submit" />
+    </x-slot:actions>
+</x-form>
 </div>
 <script>
 function toggleWelcomeMessage(isPublic) {

@@ -6,7 +6,12 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 
-       
+       <style>
+        .custom-modal-width .modal-content {
+    max-width: 96rem; /* or any other width you prefer */
+}
+       </style>
+
 
 
         {{-- Sortable.js --}}
@@ -46,6 +51,8 @@
                 {{ $slot }}
             </main>
         </div>
+       
+
 
         @livewireScripts
         

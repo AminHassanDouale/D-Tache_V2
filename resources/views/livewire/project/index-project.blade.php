@@ -6,7 +6,8 @@ use App\Models\Project;
 
 new class extends Component {
 
-    
+    public bool $myModal = false;
+
 
     public function with(): array
     {
@@ -29,6 +30,7 @@ new class extends Component {
 };?>
 
 <div>
+
         <div class="flex flex-col items-center justify-between mb-6 md:flex-row">
             <input type="text" placeholder="Search ..." 
                    class="border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
@@ -36,6 +38,7 @@ new class extends Component {
                    <a href="{{ route('projects.create') }}" class="px-4 py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600">
            Add new
         </a>
+        
         </div>
         <div class="overflow-x-auto bg-white rounded-lg shadow-md">
             <table class="min-w-full">
@@ -92,14 +95,12 @@ new class extends Component {
                             $endDateExpired = $now->greaterThanOrEqualTo($project->end_date);
                             $isExpired = $startDateExpired && $endDateExpired && $project->status_id != 3;
                         @endphp
-                
                         <span class="{{ $isExpired ? 'blink-red' : '' }}">
-                            {{ optional($project->start_date)->format('d/m H:i A') }} - {{ optional($project->due_date)->format('d/m H:i A') }}
+                            {{ optional($project->start_date)->format('d/m') }} - {{ optional($project->due_date)->format('d/m') }}
                             @if($isExpired)
                                 <span> (Expired)</span>
                             @endif
                         </span></td>
-                      
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($project->total_tasks_count > 0)
                                     @php
@@ -140,7 +141,7 @@ new class extends Component {
             {{ $projects->links() }}
         </div>
     </div>
-    
+
 
 </div>
  

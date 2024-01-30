@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\File;
 use App\Http\Requests\StoreFileRequest;
 use App\Http\Requests\UpdateFileRequest;
+use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\Request;
 
@@ -52,7 +53,29 @@ class FileController extends Controller
     
         return back()->with('success', 'Files uploaded successfully.');
     }
-
+    public function ProjectFile(Request $request, Project $project)
+    {
+        foreach ($request->file('files') as $uploadedFile) {
+            logger('Uploading file: ' . $uploadedFile->getClientOriginalName()); 
+    
+            $fileName = auth()->id() . '-projects-' . time() . '-' . $uploadedFile->getClientOriginalName();
+            $filePath = $uploadedFile->storeAs('projectfiles', $fileName, 'public');
+    
+            File::create([
+                'model_id' => $project->id, 
+                'model_type' => Project::class,
+                'filename' => $uploadedFile->getClientOriginalName(),
+                'file_path' => $filePath,
+                'name' => $uploadedFile->getClientOriginalName(),
+                'type' => $uploadedFile->getClientMimeType(),
+                'size' => $uploadedFile->getSize(),
+                'user_id' => auth()->id(),
+                'department_id' => auth()->user()->department_id,
+            ]);
+        }
+    
+        return back()->with('success', 'Files uploaded successfully.');
+    }
     /**
      * Display the specified resource.
      */

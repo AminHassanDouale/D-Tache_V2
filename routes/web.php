@@ -53,7 +53,9 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('tasks.show');
 
-//file 
+//AddTaskfile 
 Route::post('/upload-files/{task}', [FileController::class, 'store'])->name('file.store');
+//AddProjectFile
+Route::post('/upload-files/{project}', [FileController::class, 'ProjectFile'])->name('file.ProjectFile');
 
 require __DIR__.'/auth.php';
