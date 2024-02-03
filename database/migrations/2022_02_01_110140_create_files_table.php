@@ -11,17 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('projects', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+        Schema::create('files', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('model'); 
+            $table->string('filename');
+            $table->string('file_path');
             $table->string('name');
-            $table->text('description');
-            $table->unsignedBigInteger('status_id');
-            $table->integer('priority');
-            $table->boolean('privacy')->default(false);
-            $table->date('start_date')->nullable();
-            $table->date('due_date')->nullable();
-            $table->text('remark')->nullable();
-            $table->json('tags')->nullable();
+            $table->string('type');
+            $table->integer('size');
             $table->foreignId('user_id')->constrained();
             $table->foreignId('department_id')->constrained();
             $table->timestamps();
@@ -33,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('projects');
+        Schema::dropIfExists('files');
     }
 };

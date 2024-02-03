@@ -107,7 +107,6 @@ new class extends Component {
         <x-datetime label="End Date" wire:model.defer="end_date" type="datetime-local" />
 
         <x-tags label="Tags" wire:model="tags" hint="Hit enter to create a new tag" />
-        
         <x-select label="Project" wire:model="project_id">
             @foreach ($projects as $project)
                 <option value="{{ $project->id }}">{{ $project->name }}</option>

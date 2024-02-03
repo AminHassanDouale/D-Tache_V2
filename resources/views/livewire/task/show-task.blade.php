@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;  // Required for file uploads
 use App\Models\Project;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Storage;
-use App\Mail\TaskCommented;
-use Illuminate\Support\Facades\Mail;
-
 use Mary\Traits\Toast;
 
 
@@ -26,10 +22,9 @@ new #[Layout('layouts.app')] class extends Component {
 
     public Task $task;
     public $files = [];
-    public $name, $description,$priority, $status_id, $notification = false, $assignee_id, $start_date, $end_date, $user_id, $department_id, $project_id;
+    public $name, $description,$priority, $status_id, $assignee_id, $start_date, $due_date, $user_id, $department_id, $project_id;
     public $statuses;
     public $users;
-    public $newComment = '';
     public $tags = [];
     public $projects;
     public $priorities = [
@@ -48,20 +43,17 @@ new #[Layout('layouts.app')] class extends Component {
     private function loadTaskProperties()
 {
     $this->name = $this->task->name;
-    $this->files = $this->task->files; // Assuming a one-to-many relationship
-
     $this->description = $this->task->description;
     $this->priority = $this->task->priority;
     $this->status_id = $this->task->status_id;
-    $this->notification = $this->task->notification;
     $this->assignee_id = $this->task->assignee_id;
     $this->start_date = $this->task->start_date ? $this->task->start_date->format('Y-m-d\TH:i') : null;
-    $this->end_date = $this->task->end_date ? $this->task->end_date->format('Y-m-d\TH:i') : null;
+    $this->due_date = $this->task->due_date ? $this->task->due_date->format('Y-m-d\TH:i') : null;
     $this->project_id = $this->task->project_id;
     $this->tags = $this->task->tags; // Assuming 'tags' is an array
     $this->statuses = Status::all();
-    $this->users = User::all();
-    $this->projects = Project::all();
+        $this->users = User::all();
+        $this->projects = Project::all();
 
     // Add any other properties that you need to load from the task
 }
@@ -71,13 +63,12 @@ public function saveTask()
     {
         $validated = $this->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => '',
             'priority' => 'required',
             'status_id' => 'required|exists:statuses,id',
-            'notification' => 'boolean',
             'assignee_id' => 'nullable|exists:users,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'due_date' => 'required|date|after_or_equal:start_date',
             'project_id' => 'required|exists:projects,id',
             'tags' => 'array',
         ]);
@@ -98,58 +89,22 @@ public function saveTask()
 
        
 }
+
 public function deleteFile($fileId)
 {
-    $file = File::findOrFail($fileId);
+    $file = File::find($fileId);
+
+
     $file->delete();
+
+    // Show a success message
+    $this->toast('success', 'File deleted successfully.');
 }
-
-
-// Add a method to save new comments
-public function addComment()
-{
-    $validatedData = $this->validate([
-        'newComment' => 'required|string|max:255', // Validate the new comment
-    ]);
-
-    $this->task->comments()->create([
-        'model_id' => $this->task->id, 
-        'model_type' => Task::class,
-        'comment' => $this->newComment,
-        'user_id' => auth()->id(),
-        'department_id' => auth()->user()->department_id,
-        'date' => now(),
-    ]);
-
-    $this->newComment = ''; // Clear the new comment input after saving
-    $this->task->load('comments'); // Reload the comments relationship to include the new comment
-
-    $taskOwner = $this->task->user; // Assuming user_id is related to 'user' relation
-    $taskAssignee = $this->task->assignee; // Assuming assignee_id is related to 'assignee' relation
-
-    // Prepare the comment text for the email
-    $commentText = $validatedData['newComment'];
-
-    // Import the TaskCommented Mailable at the top of your component
-
-    // Send email to task owner
-    if ($taskOwner) {
-        Mail::to($taskOwner->email)->send(new TaskCommented($this->task, $commentText));
-    }
-
-    // Send email to assignee if different from owner
-    if ($taskAssignee && $taskAssignee->id !== $taskOwner->id) {
-        Mail::to($taskAssignee->email)->send(new TaskCommented($this->task, $commentText));
-    }
-}
-
 }; ?>
 
-<div class="px-10"> <!-- adds horizontal padding -->
 
-<div class="flex justify-start">
-    <div class="w-3/4 pt-4 bg-white shadow-md rounded-xl">
-
+<div class="flex justify-center px-4 pt-4 md:px-20 md:pt-20">
+    <div class="w-full p-6 bg-white shadow-md md:w-2/4 rounded-xl">
 
     <form wire:submit.prevent="saveTask">
         <!-- Other task fields -->
@@ -157,26 +112,21 @@ public function addComment()
 
         <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
         <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
-<div>
+
         <label for="priority">Priority</label>
 <select id="priority" wire:model="priority">
     @foreach ($priorities as $priority)
         <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
     @endforeach
 </select>
-</div>
-<br>
-<div>
-<label for="priority">Status</label>
+
 
         <select label="Status" wire:model="status_id">
             @foreach ($statuses as $status)
                 <option value="{{ $status->id }}">{{ $status->name }}</option>
             @endforeach
         </select>
-    </div>
-<br>
-<label for="assignee_id">Assignee</label>
+
         <select label="Assignee" wire:model="assignee_id">
             @foreach ($users as $user)
                 <option value="{{ $user->id }}">{{ $user->name }}</option>
@@ -184,51 +134,67 @@ public function addComment()
         </select>
 
         <x-datetime label="Start Date" wire:model.defer="start_date" type="datetime-local" />
-        <x-datetime label="End Date" wire:model.defer="end_date" type="datetime-local" />
+        <x-datetime label="End Date" wire:model.defer="due_date" type="datetime-local" />
 
         <x-tags label="Tags" wire:model="tags" hint="Hit enter to create a new tag" />
-        <x-file wire:model="files" label="Documents" multiple id="fileInput" />
 
         <select label="Project" wire:model="project_id">
             @foreach ($projects as $project)
                 <option value="{{ $project->id }}">{{ $project->name }}</option>
             @endforeach
         </select>
-
-        <x-checkbox label="Send Notification" wire:model.defer="notification" />
+<div class="mb-10">
         <x-button label="Cancel" link="/" class="mt-10"/>
         <x-button label="Save Changes" spinner="saveTask" type="submit" icon="o-paper-airplane" class="btn-primary" />
+</div>
     </form>
-    
-    @if (session()->has('message'))
-        <div>{{ session('message') }}</div>
-    @endif
-</div>
-</div>
 
+    <hr>
+    <x-header title="Added Files"size="text-xl" separator  />
 
-<div>
+    <form action="{{ route('file.store',$task) }}" method="post" enctype="multipart/form-data">
+        @csrf
+
+        <input type="file" name="files[]" multiple >
+        @error('files.*')
+            <div class="error">{{ $message }}</div>
+        @enderror
+        <x-button type="submit">Upload Files</x-button>
+    </form>
+    @if($task->files->count() > 0)
+
+    <header>File</header>
+
     @foreach ($task->files as $file)
-        <div>
-             <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}">
+        <code>{{ $file->name }}</code>
+            <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}" class="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600">Download</a>
 
-                {{ $file->name }} ({{ $file->size }} bytes)
-            </a>
-            <button wire:click="deleteFile({{ $file->id }})">Delete</button>
-
-        </div>
+            <x-button wire:click="deleteFile({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner 
+                wire:loading.attr="disabled"
+                wire:target="deleteFile({{ $file->id }})"
+                onclick="confirmDelete(event)"
+            />
+       
     @endforeach
-</div>
+    @else
+    <p>No files available.</p>
+@endif
 
-<div>
-    <textarea wire:model="newComment"></textarea>
-    <button wire:click="addComment">Add Comment</button>
-</div>
-
-<div>
-    @foreach ($task->comments as $comment)
-        <div>{{ $comment->comment }}</div>
-    @endforeach
 </div>
 
 </div>
+</div>
+
+<!-- JavaScript confirmation script -->
+<script>
+    function confirmDelete(event) {
+        var confirmDelete = confirm("Are you sure you want to delete this file?");
+        if (!confirmDelete) {
+            event.preventDefault(); // Cancel the Livewire action if the user clicks "Cancel" in the confirmation
+        }
+    }
+</script>
+
+
+
+

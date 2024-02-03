@@ -22,7 +22,7 @@ new #[Layout('layouts.app')] class extends Component {
 
     public Task $task;
     public $files = [];
-    public $name, $description,$priority, $status_id, $notification = false, $assignee_id, $start_date, $end_date, $user_id, $department_id, $project_id;
+    public $name, $description,$priority, $status_id, $assignee_id, $start_date, $due_date, $user_id, $department_id, $project_id;
     public $statuses;
     public $users;
     public $tags = [];
@@ -46,10 +46,9 @@ new #[Layout('layouts.app')] class extends Component {
     $this->description = $this->task->description;
     $this->priority = $this->task->priority;
     $this->status_id = $this->task->status_id;
-    $this->notification = $this->task->notification;
     $this->assignee_id = $this->task->assignee_id;
     $this->start_date = $this->task->start_date ? $this->task->start_date->format('Y-m-d\TH:i') : null;
-    $this->end_date = $this->task->end_date ? $this->task->end_date->format('Y-m-d\TH:i') : null;
+    $this->due_date = $this->task->due_date ? $this->task->due_date->format('Y-m-d\TH:i') : null;
     $this->project_id = $this->task->project_id;
     $this->tags = $this->task->tags; // Assuming 'tags' is an array
     $this->statuses = Status::all();
@@ -64,13 +63,12 @@ public function saveTask()
     {
         $validated = $this->validate([
             'name' => 'required|string|max:255',
-            'description' => 'required|string',
+            'description' => '',
             'priority' => 'required',
             'status_id' => 'required|exists:statuses,id',
-            'notification' => 'boolean',
             'assignee_id' => 'nullable|exists:users,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'due_date' => 'required|date|after_or_equal:start_date',
             'project_id' => 'required|exists:projects,id',
             'tags' => 'array',
         ]);
@@ -91,12 +89,22 @@ public function saveTask()
 
        
 }
+
+public function deleteFile($fileId)
+{
+    $file = File::find($fileId);
+
+
+    $file->delete();
+
+    // Show a success message
+    $this->toast('success', 'File deleted successfully.');
+}
 }; ?>
 
 
-<div class="flex justify-center">
-<div class="w-2/4 p-6 bg-white shadow-md rounded-xl">
-
+<div class="flex justify-center px-4 pt-4 md:px-20 md:pt-20">
+    <div class="w-full p-6 bg-white shadow-md md:w-2/4 rounded-xl">
 
     <form wire:submit.prevent="saveTask">
         <!-- Other task fields -->
@@ -126,7 +134,7 @@ public function saveTask()
         </select>
 
         <x-datetime label="Start Date" wire:model.defer="start_date" type="datetime-local" />
-        <x-datetime label="End Date" wire:model.defer="end_date" type="datetime-local" />
+        <x-datetime label="End Date" wire:model.defer="due_date" type="datetime-local" />
 
         <x-tags label="Tags" wire:model="tags" hint="Hit enter to create a new tag" />
 
@@ -135,15 +143,15 @@ public function saveTask()
                 <option value="{{ $project->id }}">{{ $project->name }}</option>
             @endforeach
         </select>
-
-        <x-checkbox label="Send Notification" wire:model.defer="notification" />
+<div class="mb-10">
         <x-button label="Cancel" link="/" class="mt-10"/>
         <x-button label="Save Changes" spinner="saveTask" type="submit" icon="o-paper-airplane" class="btn-primary" />
+</div>
     </form>
 
     <hr>
-<div class="pt-6">
-    <header>Ajouter File</header>
+    <x-header title="Added Files"size="text-xl" separator  />
+
     <form action="{{ route('file.store',$task) }}" method="post" enctype="multipart/form-data">
         @csrf
 
@@ -151,14 +159,41 @@ public function saveTask()
         @error('files.*')
             <div class="error">{{ $message }}</div>
         @enderror
-        <button type="submit">Upload Files</button>
+        <x-button type="submit">Upload Files</x-button>
     </form>
-    
+    @if($task->files->count() > 0)
 
+    <header>File</header>
+
+    @foreach ($task->files as $file)
+        <code>{{ $file->name }}</code>
+            <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}" class="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600">Download</a>
+
+            <x-button wire:click="deleteFile({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner 
+                wire:loading.attr="disabled"
+                wire:target="deleteFile({{ $file->id }})"
+                onclick="confirmDelete(event)"
+            />
+       
+    @endforeach
+    @else
+    <p>No files available.</p>
+@endif
+
+</div>
 
 </div>
 </div>
-</div>
+
+<!-- JavaScript confirmation script -->
+<script>
+    function confirmDelete(event) {
+        var confirmDelete = confirm("Are you sure you want to delete this file?");
+        if (!confirmDelete) {
+            event.preventDefault(); // Cancel the Livewire action if the user clicks "Cancel" in the confirmation
+        }
+    }
+</script>
 
 
 

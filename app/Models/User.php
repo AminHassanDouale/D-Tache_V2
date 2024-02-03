@@ -18,7 +18,8 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'username',
+        'fullname',
         'email',
         'password',
         'department_id',
@@ -56,4 +57,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(Task::class);
     }
+    
 }

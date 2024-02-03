@@ -14,9 +14,9 @@ new class extends Component {
         return [
             'projects' => Auth::user()
                 ->projects()
-                ->with('statuses') 
-                ->with('members.user') 
-                ->withCount('tasks') 
+                ->with('statuses')
+                ->with('members.user')
+                ->withCount('tasks')
                 ->with(['tasks' => function ($query) {
                 $query->where('status_id', '!=', 3); 
             }])

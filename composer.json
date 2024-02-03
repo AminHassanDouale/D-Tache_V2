@@ -14,7 +14,8 @@
         "livewire/livewire": "^3.4",
         "livewire/volt": "^1.6",
         "mkocansey/bladewind": "^2.4",
-        "robsontenorio/mary": "^1.20"
+        "robsontenorio/mary": "^1.20",
+        "tonysm/rich-text-laravel": "^1.7"
     },
     "require-dev": {
         "composer/composer": "^2.6",
