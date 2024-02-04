@@ -117,20 +117,7 @@ new class extends Component {
                    <x-button label="Add New" class="btn-primary" wire:click="$toggle('myModal')" />
     
                 </div>
-    <x-tabs selected="users-tab">
-        <x-tab name="users-tab" label="Grid" icon="o-squares-2x2">
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
-        @foreach ($tasks as $task)
-        
-        <x-card title="{{ $task->name ?? '' }}" subtitle="{{ $task->status->name }}" shadow separator>
-            {!!\Illuminate\Support\Str::limit($task->description, 50)!!}...
-        </x-card>
-        @endforeach
-            </div>
-            {{ $tasks->links() }}
-        </div>
-       
-    </x-tab>
+    <x-tabs selected="tricks-tab">
      
         <x-tab name="tricks-tab" label="Lists" icon="o-list-bullet">
             <div class="overflow-x-auto">

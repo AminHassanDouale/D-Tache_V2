@@ -164,18 +164,31 @@ public function deleteFile($fileId)
     @if($task->files->count() > 0)
 
     <header>File</header>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <!-- head -->
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($task->files as $file)
+                <!-- row -->
+                <tr>
+                    <td>{{ $file->name }}</td>
+                    <td>
+                        <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}"><x-icon name="m-arrow-down-on-square" />
+                        </a>
+                        <x-button wire:click="deleteFile({{ $file->id }})" onclick="confirmDelete(event)"  icon="o-trash" class="bg-red-500" spinner />
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 
-    @foreach ($task->files as $file)
-        <code>{{ $file->name }}</code>
-            <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}" class="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600">Download</a>
-
-            <x-button wire:click="deleteFile({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner 
-                wire:loading.attr="disabled"
-                wire:target="deleteFile({{ $file->id }})"
-                onclick="confirmDelete(event)"
-            />
-       
-    @endforeach
     @else
     <p>No files available.</p>
 @endif

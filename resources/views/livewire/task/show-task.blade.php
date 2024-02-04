@@ -6,11 +6,15 @@ use App\Models\Task;
 use App\Models\File;
 use App\Models\Status;
 use App\Models\User;
+use App\Models\Comment;
 use App\Models\Department;
 use Illuminate\Support\Facades\Auth;
 use Livewire\WithFileUploads;  // Required for file uploads
 use App\Models\Project;
 use Carbon\Carbon;
+use App\Mail\TaskCommented;
+use Illuminate\Support\Facades\Mail;
+
 use Mary\Traits\Toast;
 
 
@@ -20,12 +24,16 @@ new #[Layout('layouts.app')] class extends Component {
     use Toast;
     use WithFileUploads;
 
+
     public Task $task;
     public $files = [];
-    public $name, $description,$priority, $status_id, $assignee_id, $start_date, $due_date, $user_id, $department_id, $project_id;
+    
+    public $comments;
+    public $comment;
     public $statuses;
     public $users;
     public $tags = [];
+    public $fileToDelete;
     public $projects;
     public $priorities = [
         ['value' => '1', 'label' => '🚩 Priority 1'], // Red flag emoji
@@ -52,149 +60,227 @@ new #[Layout('layouts.app')] class extends Component {
     $this->project_id = $this->task->project_id;
     $this->tags = $this->task->tags; // Assuming 'tags' is an array
     $this->statuses = Status::all();
-        $this->users = User::all();
-        $this->projects = Project::all();
+    $this->users = User::all();
+    $this->projects = Project::all();
+    $this->files = $this->task->files->sortBy('created_at');
+    $this->comments = $this->task->comments()->orderBy('created_at')->get();
 
-    // Add any other properties that you need to load from the task
 }
 
 
-public function saveTask()
-    {
-        $validated = $this->validate([
-            'name' => 'required|string|max:255',
-            'description' => '',
-            'priority' => 'required',
-            'status_id' => 'required|exists:statuses,id',
-            'assignee_id' => 'nullable|exists:users,id',
-            'start_date' => 'required|date',
-            'due_date' => 'required|date|after_or_equal:start_date',
-            'project_id' => 'required|exists:projects,id',
-            'tags' => 'array',
-        ]);
-   
-        
-        $this->task->update($validated);
+public function saveComment()
+{
+    $validatedData = $this->validate([
+        'comment' => 'required|string|max:255', // Validate the new comment
+    ]);
 
-        $this->toast(
-            type: 'warning',
-            title: 'Mise A jour!',
-            description: null,                  // optional (text)
-            position: 'toast-bottom toast-start',    // optional (daisyUI classes)
-            icon: 'o-information-circle',       // Optional (any icon)
-            css: 'alert-warning',                  // Optional (daisyUI classes)
-            timeout: 3000,                      // optional (ms)
-            redirectTo: null                    // optional (uri)
-        );
+    // Assuming you have a Comment model
+    $this->task->comments()->create([
+        'comment' => $this->comment,
+        'user_id' => Auth::id(), 
+        'department_id' => Auth::user()->department_id,
+        'date' => now(),
+    ]);
 
-       
+    // Clear the comment input after saving
+    $this->comment = '';
+    $this->task->load('comments'); 
+
+    
+$taskOwner = $this->task->user; 
+$taskAssignee = $this->task->assignee; 
+
+
+$commentText = $validatedData['comment'];
+
+
+
+if ($taskOwner) {
+    Mail::to($taskOwner->email)->send(new TaskCommented($this->task, $commentText));
 }
+
+
+if ($taskAssignee && $taskAssignee->id !== $taskOwner->id) {
+    Mail::to($taskAssignee->email)->send(new TaskCommented($this->task, $commentText));
+} 
+    $this->comments = $this->task->comments()->orderBy('created_at')->get();
+
+    // You can add a toast or any other notification here
+    $this->toast('success', 'Comment added successfully.');
+}
+
 
 public function deleteFile($fileId)
 {
-    $file = File::find($fileId);
-
-
-    $file->delete();
-
-    // Show a success message
+    if ($this->fileToDelete) {
+        $file = File::find($this->fileToDelete);
+        if ($file) {
+            $file->delete();
+            $this->fileToDelete = null; 
+        }
+    }
+  
+    
     $this->toast('success', 'File deleted successfully.');
 }
+public function deleteComment($commentId)
+{
+    $comment = Comment::find($commentId);
+
+    if ($comment && $comment->user_id === Auth::id()) {
+        $comment->delete();
+        $this->toast('success', 'Comment deleted successfully.');
+        $this->comments = $this->task->comments()->orderBy('created_at')->get();
+
+    } else {
+        $this->toast('error', 'Unable to delete comment.');
+    }
+}
+
+
 }; ?>
 
 
-<div class="flex justify-center px-4 pt-4 md:px-20 md:pt-20">
-    <div class="w-full p-6 bg-white shadow-md md:w-2/4 rounded-xl">
+<div class="flex flex-col items-center px-4 pt-4 md:flex-row md:items-start md:px-20 md:pt-20">
+    <div class="w-full mb-4 md:w-1/2 lg:w-1/4 rounded-xl md:mr-4">
 
-    <form wire:submit.prevent="saveTask">
-        <!-- Other task fields -->
-        <x-errors title="Oops!" description="Please, fix the errors below." />
+        <x-card title="Task Name: {{ $task->name }}" subtitle=" Task Description: {!! $task->description !!}" separator progress-indicator shadow>
+           CreatedBy: <code>{{ $task->user->fullname }}</code> <br>
+            <strong>
+                <x-icon name="m-bell-alert" />
+                @if($task->status_id == 3)
+                    <span class="text-green-600"> {{ $task->status ? $task->status->name : ''}}</span> <!-- Green dot -->
+                @elseif($task->status_id == 2)
+                    <span class="text-yellow-200">{{ $task->status ? $task->status->name : ''}}</span> <!-- Warning dot -->
+                @elseif($task->status_id == 1)
+                    <span class="text-blue-300">{{ $task->status ? $task->status->name : ''}}</span> <!-- Blue dot -->
+                @endif
+            </strong>
+            <br>
+            <strong>
+                @foreach($priorities as $priorityOption)
+                    @if($priorityOption['value'] == $task->priority)
+                        <span class="text-blue-300">{{ $priorityOption['label'] }}</span>
+                    @endif
+                @endforeach
+            </strong>
+            <br>
+            <strong>
+                <x-icon name="m-users" /> {{ $task->assignee_id ? $task->assignee->fullname : ''}}
+            </strong>
+            <br>
+            <strong>  </strong>
+            <strong>
+                <x-icon name="m-tag" />
+                Project: {{ $task->project_id ? $task->project->name : ''}}
+            </strong>
+        </x-card>
+    </div>
 
-        <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" />
-        <x-textarea label="Description" wire:model.defer="description" placeholder="Enter task description" />
+    <div class="w-full p-6 bg-white shadow-md md:w-2/4 lg:w2/2 ">
+        <header class="mb-4">File</header>
+        <div class="overflow-x-auto">
+            <table class="table">
+                <!-- head -->
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if($files->count() > 0)
+                        @foreach ($files as $file)
+                            <!-- row -->
+                            <tr>
+                                <td>{{ $file->name }}</td>
+                                <td>
+                                    <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}">
+                                        <x-icon name="m-arrow-down-on-square" />
+                                    </a>
+                                    <x-button wire:click="fileToDelete({{ $file->id }})" onclick="confirmDelete({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner />
 
-        <label for="priority">Priority</label>
-<select id="priority" wire:model="priority">
-    @foreach ($priorities as $priority)
-        <option value="{{ $priority['value'] }}">{{ $priority['label'] }}</option>
-    @endforeach
-</select>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr>
+                            <td colspan="2" class="text-center">No files available.</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
 
+        <hr class="my-6">
+        <div class="mt-4">
+            <label for="comment" class="block text-sm font-medium text-gray-700">Comment</label>
+            <x-textarea
+            label="Leave Comment"
+            wire:model="comment"
+            placeholder=""
+            hint="Max 1000 chars"
+            rows="5"
+            inline />
+            @error('comment') <span class="text-red-500">{{ $message }}</span> @enderror
+        </div>
+        <!-- Add this button to trigger the saveComment method -->
+<x-button wire:click="saveComment" class="mt-4" spinner>
+    Save Comment
+</x-button>
+<div class="w-full p-6 md:w-3/4 lg:w2/2">
+    <hr class="my-6">
 
-        <select label="Status" wire:model="status_id">
-            @foreach ($statuses as $status)
-                <option value="{{ $status->id }}">{{ $status->name }}</option>
+    <div class="mb-4">
+        <header class="mb-4">Comments</header>
+
+        @if($comments->count() > 0)
+            @foreach ($comments as $comment)
+            <x-list-item :item="$comments" no-separator no-hover>
+                <x-slot:avatar>
+                @php
+                    $userName = $comment->user->fullname;
+                    $firstAlphabet = strtoupper(substr($userName, 0, 1));
+                    $lastAlphabet = strtoupper(substr($userName, -1));
+                @endphp
+                <x-badge value="{{ $firstAlphabet }}{{ $lastAlphabet }}" class="badge-primary text-uppercase" />                
+                </x-slot:avatar>
+                <x-slot:value>
+                    {{ $comment->user->fullname }}: <x-icon name="s-calendar-days"  /> <strong>{{ $comment->created_at->diffForHumans() }}</strong>-({{$comment->created_at}})
+                </x-slot:value>
+                <x-slot:sub-value>
+                    {{ $comment->comment }}
+                </x-slot:sub-value>
+                <x-slot:actions>
+                    <x-button icon="o-trash" class="text-red-500" wire:click="deleteComment({{ $comment->id }})" spinner />
+
+            </x-slot:actions>
+            </x-list-item>  
             @endforeach
-        </select>
-
-        <select label="Assignee" wire:model="assignee_id">
-            @foreach ($users as $user)
-                <option value="{{ $user->id }}">{{ $user->name }}</option>
-            @endforeach
-        </select>
-
-        <x-datetime label="Start Date" wire:model.defer="start_date" type="datetime-local" />
-        <x-datetime label="End Date" wire:model.defer="due_date" type="datetime-local" />
-
-        <x-tags label="Tags" wire:model="tags" hint="Hit enter to create a new tag" />
-
-        <select label="Project" wire:model="project_id">
-            @foreach ($projects as $project)
-                <option value="{{ $project->id }}">{{ $project->name }}</option>
-            @endforeach
-        </select>
-<div class="mb-10">
-        <x-button label="Cancel" link="/" class="mt-10"/>
-        <x-button label="Save Changes" spinner="saveTask" type="submit" icon="o-paper-airplane" class="btn-primary" />
-</div>
-    </form>
-
-    <hr>
-    <x-header title="Added Files"size="text-xl" separator  />
-
-    <form action="{{ route('file.store',$task) }}" method="post" enctype="multipart/form-data">
-        @csrf
-
-        <input type="file" name="files[]" multiple >
-        @error('files.*')
-            <div class="error">{{ $message }}</div>
-        @enderror
-        <x-button type="submit">Upload Files</x-button>
-    </form>
-    @if($task->files->count() > 0)
-
-    <header>File</header>
-
-    @foreach ($task->files as $file)
-        <code>{{ $file->name }}</code>
-            <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}" class="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600">Download</a>
-
-            <x-button wire:click="deleteFile({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner 
-                wire:loading.attr="disabled"
-                wire:target="deleteFile({{ $file->id }})"
-                onclick="confirmDelete(event)"
-            />
+        @else
+            <p>No comments available.</p>
+        @endif
+    </div>
        
-    @endforeach
-    @else
-    <p>No files available.</p>
-@endif
-
+    </div>
 </div>
 
-</div>
-</div>
-
-<!-- JavaScript confirmation script -->
 <script>
-    function confirmDelete(event) {
+    function confirmDelete(fileId) {
         var confirmDelete = confirm("Are you sure you want to delete this file?");
-        if (!confirmDelete) {
-            event.preventDefault(); // Cancel the Livewire action if the user clicks "Cancel" in the confirmation
+        if (confirmDelete) {
+            Livewire.emit('confirmDelete', fileId); // Emit Livewire event with file ID
+        }
+    }
+    
+</script>
+<script>
+    function confirmDelete(commentId) {
+        var confirmDelete = confirm("Are you sure you want to delete this comment?");
+        if (confirmDelete) {
+            Livewire.emit('confirmDelete', commentId); // Emit Livewire event with comment ID
         }
     }
 </script>
-
-
 
 
