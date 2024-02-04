@@ -16,7 +16,7 @@
 
         {{-- Sortable.js --}}
         
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>D-Tache</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
