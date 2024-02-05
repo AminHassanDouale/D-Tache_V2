@@ -177,7 +177,7 @@ public function deleteComment($commentId)
         </x-card>
     </div>
 
-    <div class="w-full p-6 bg-white shadow-md md:w-2/4 lg:w2/2 ">
+    <div class="w-full p-6 overflow-auto bg-white shadow-md md:w-2/4 lg:w2/2">
         <header class="mb-4">File</header>
         <div class="overflow-x-auto">
             <table class="table">
@@ -228,10 +228,10 @@ public function deleteComment($commentId)
 <x-button wire:click="saveComment" class="mt-4" spinner>
     Save Comment
 </x-button>
-<div class="w-full p-6 md:w-3/4 lg:w2/2">
+<div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
     <hr class="my-6">
 
-    <div class="mb-4">
+    <div class="mb-4 ">
         <header class="mb-4">Comments</header>
 
         @if($comments->count() > 0)

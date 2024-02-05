@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\FileController;
+use App\Models\Category;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -52,6 +54,11 @@ Route::view('profile', 'profile')
     Volt::route('tasks/{task}/show', 'task.show-task')
     ->middleware(['auth'])
     ->name('tasks.show');
+
+
+    //categories
+
+    Route::resource('categories', CategoryController::class);
 
 //AddTaskfile 
 Route::post('/upload-files/{task}', [FileController::class, 'store'])->name('file.store');
