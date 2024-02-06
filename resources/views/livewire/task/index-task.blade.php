@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Models\Project;
 use Mary\Traits\Toast;
 
+use App\Mail\TaskCreatedMail;
+use Illuminate\Support\Facades\Mail;
+
 new class extends Component {
     use WithPagination;
     use Toast;
@@ -50,6 +53,15 @@ new class extends Component {
             'assignee_id' => $this->assignee_id,
             'project_id' => $this->project_id,
         ]);
+    $assignee = User::findOrFail($this->assignee_id);
+    $creator = auth()->user();
+
+    Mail::to($assignee->email)->send(new TaskCreatedMail([
+        'task' => $task,
+        'assignee' => $assignee,
+        'creator' => $creator,
+        'project' => $task->project, 
+    ]));
         $this->toast(
             type: 'success',
             title: 'ce fait!',

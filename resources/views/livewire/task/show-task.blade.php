@@ -27,14 +27,17 @@ new #[Layout('layouts.app')] class extends Component {
 
     public Task $task;
     public $files = [];
-    
     public $comments;
+    public $status_id;
     public $comment;
+    public $priority;
     public $statuses;
     public $users;
     public $tags = [];
     public $fileToDelete;
     public $projects;
+    public $assignee_id;
+    public $project_id;
     public $priorities = [
         ['value' => '1', 'label' => '🚩 Priority 1'], // Red flag emoji
         ['value' => '2', 'label' => '🟧 Priority 2'], // Orange square emoji
@@ -47,7 +50,6 @@ new #[Layout('layouts.app')] class extends Component {
         $this->task = $task;
         $this->loadTaskProperties();
     }
-    
     private function loadTaskProperties()
 {
     $this->name = $this->task->name;
@@ -138,6 +140,53 @@ public function deleteComment($commentId)
 }
 
 
+public function changeStatus()
+    {
+        // Validate $this->status_id if needed
+
+        $this->task->update(['status_id' => $this->status_id]);
+
+        // Reload task properties after updating status
+        $this->loadTaskProperties();
+
+        $this->toast('success', 'Task status changed successfully.');
+    }
+    public function changePriority()
+    {
+        // Validate $this->priority if needed
+
+        $this->task->update(['priority' => $this->priority]);
+
+        // Reload task properties after updating priority
+        $this->loadTaskProperties();
+
+        $this->toast('success', 'Task priority changed successfully.');
+    }
+    public function changeAssignee()
+    {
+        // Validate $this->assignee_id if needed
+
+        $this->task->update(['assignee_id' => $this->assignee_id]);
+
+        // Reload task properties after updating assignee
+        $this->loadTaskProperties();
+
+        $this->toast('success', 'Task assignee changed successfully.');
+    }
+    public function changeProject()
+    {
+        // Validate $this->project_id if needed
+
+        $this->task->update(['project_id' => $this->project_id]);
+
+        // Reload task properties after updating project_id
+        $this->loadTaskProperties();
+
+        $this->toast('success', 'Task project changed successfully.');
+    }
+
+
+
 }; ?>
 
 
@@ -146,33 +195,39 @@ public function deleteComment($commentId)
 
         <x-card title="Task Name: {{ $task->name }}" subtitle=" Task Description: {!! $task->description !!}" separator progress-indicator shadow>
            CreatedBy: <code>{{ $task->user->fullname }}</code> <br>
+         
+    <x-icon name="m-bell-alert" />
+    Status: <select wire:model="status_id" wire:change="changeStatus" id="status" name="status" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+        @foreach($statuses as $status)
+            <option value="{{ $status->id }}">{{ $status->name }}</option>
+        @endforeach
+    </select>
+</strong>
+            <br>
             <strong>
-                <x-icon name="m-bell-alert" />
-                @if($task->status_id == 3)
-                    <span class="text-green-600"> {{ $task->status ? $task->status->name : ''}}</span> <!-- Green dot -->
-                @elseif($task->status_id == 2)
-                    <span class="text-yellow-200">{{ $task->status ? $task->status->name : ''}}</span> <!-- Warning dot -->
-                @elseif($task->status_id == 1)
-                    <span class="text-blue-300">{{ $task->status ? $task->status->name : ''}}</span> <!-- Blue dot -->
-                @endif
+             Priority:   <select wire:model="priority" wire:change="changePriority" id="priority" name="priority" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+                    @foreach($priorities as $priorityOption)
+                        <option value="{{ $priorityOption['value'] }}">{{ $priorityOption['label'] }}</option>
+                    @endforeach
+                </select>
             </strong>
             <br>
             <strong>
-                @foreach($priorities as $priorityOption)
-                    @if($priorityOption['value'] == $task->priority)
-                        <span class="text-blue-300">{{ $priorityOption['label'] }}</span>
-                    @endif
-                @endforeach
-            </strong>
-            <br>
-            <strong>
-                <x-icon name="m-users" /> {{ $task->assignee_id ? $task->assignee->fullname : ''}}
+                <x-icon name="m-users" /> <select wire:model="assignee_id" wire:change="changeAssignee" id="assignee" name="assignee" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}">{{ $user->fullname }}</option>
+                    @endforeach
+                </select>
             </strong>
             <br>
             <strong>  </strong>
             <strong>
                 <x-icon name="m-tag" />
-                Project: {{ $task->project_id ? $task->project->name : ''}}
+                Project: <select wire:model="project_id" wire:change="changeProject" id="project" name="project" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted>
+                    @foreach($projects as $project)
+                        <option value="{{ $project->id }}">{{ $project->name }}</option>
+                    @endforeach
+                </select>
             </strong>
         </x-card>
     </div>

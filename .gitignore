@@ -17,3 +17,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/Http/Controller/UserController
+/resources/views/users
+/resources/views/navigation
