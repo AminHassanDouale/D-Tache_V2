@@ -26,8 +26,11 @@ new #[Layout('layouts.app')] class extends Component {
 
 
     public Task $task;
+    public $description;
+    public bool $myModal = false;
     public $files = [];
     public $comments;
+    public $name;
     public $status_id;
     public $comment;
     public $priority;
@@ -44,7 +47,8 @@ new #[Layout('layouts.app')] class extends Component {
         ['value' => '3', 'label' => '🟦 Priority 3'], // Blue square emoji
         ['value' => '4', 'label' => '⬜ Priority 4'], // White square emoji
     ];
-
+    public $showComments = false;
+    public $showFiles = false;
     public function mount(Task $task)
     {
         $this->task = $task;
@@ -125,6 +129,15 @@ public function deleteFile($fileId)
     
     $this->toast('success', 'File deleted successfully.');
 }
+
+public function toggleComments()
+{
+    $this->showComments = !$this->showComments;
+}
+public function toggleFiles()
+{
+    $this->showFiles = !$this->showFiles;
+}
 public function deleteComment($commentId)
 {
     $comment = Comment::find($commentId);
@@ -139,50 +152,110 @@ public function deleteComment($commentId)
     }
 }
 
+public function changeTaskName()
+{
+    
+
+    $this->task->update(['name' => $this->name]);
+
+    
+    $this->loadTaskProperties();
+
+    $this->toast(
+            type: 'warning',
+            title: 'Mise A jour, Nom Du Task!',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
+}
+public function changeTaskDescription()
+{
+    $this->task->update(['description' => $this->description]);
+
+    $this->loadTaskProperties();
+
+    $this->toast(
+            type: 'warning',
+            title: 'Mise A jour, Description!',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
+}
 
 public function changeStatus()
     {
-        // Validate $this->status_id if needed
 
         $this->task->update(['status_id' => $this->status_id]);
 
-        // Reload task properties after updating status
         $this->loadTaskProperties();
 
-        $this->toast('success', 'Task status changed successfully.');
+        $this->toast(
+            type: 'warning',
+            title: 'Mise A jour,le Status !',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
     }
     public function changePriority()
     {
-        // Validate $this->priority if needed
-
         $this->task->update(['priority' => $this->priority]);
-
-        // Reload task properties after updating priority
         $this->loadTaskProperties();
 
-        $this->toast('success', 'Task priority changed successfully.');
+        $this->toast(
+            type: 'warning',
+            title: 'Mise A jour, Priorite!',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
     }
     public function changeAssignee()
     {
-        // Validate $this->assignee_id if needed
-
         $this->task->update(['assignee_id' => $this->assignee_id]);
 
-        // Reload task properties after updating assignee
         $this->loadTaskProperties();
 
-        $this->toast('success', 'Task assignee changed successfully.');
+        $this->toast(
+            type: 'warning',
+            title: 'Mise A jour, Assignee !',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
     }
     public function changeProject()
     {
-        // Validate $this->project_id if needed
-
         $this->task->update(['project_id' => $this->project_id]);
-
-        // Reload task properties after updating project_id
         $this->loadTaskProperties();
 
-        $this->toast('success', 'Task project changed successfully.');
+        $this->toast(
+            type: 'warning',
+            title: 'Mise A jour, Project!',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-end',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
     }
 
 
@@ -193,8 +266,18 @@ public function changeStatus()
 <div class="flex flex-col items-center px-4 pt-4 md:flex-row md:items-start md:px-20 md:pt-20">
     <div class="w-full mb-4 md:w-1/2 lg:w-1/4 rounded-xl md:mr-4">
 
-        <x-card title="Task Name: {{ $task->name }}" subtitle=" Task Description: {!! $task->description !!}" separator progress-indicator shadow>
-           CreatedBy: <code>{{ $task->user->fullname }}</code> <br>
+        <x-card title="Task Detail" subtitle=" " separator progress-indicator shadow>
+            <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" :value="$task->name" wire:keydown.enter="changeTaskName" />
+              <br>
+                <x-textarea
+                label="Task Description"
+                wire:model.defer="description"
+                placeholder="Enter task description"
+                :value="$task->description"
+                wire:keydown.enter="changeTaskDescription"
+                rows="5"
+                inline
+            />
          
     <x-icon name="m-bell-alert" />
     Status: <select wire:model="status_id" wire:change="changeStatus" id="status" name="status" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
@@ -229,11 +312,24 @@ public function changeStatus()
                     @endforeach
                 </select>
             </strong>
+            <div>
+
+
+            </div>
+
         </x-card>
     </div>
-
     <div class="w-full p-6 overflow-auto bg-white shadow-md md:w-2/4 lg:w2/2">
-        <header class="mb-4">File</header>
+        <div>
+            <x-icon name="o-document-arrow-up" wire:click="toggleFiles" />
+            {{ $task->files->count() }}
+       
+      
+            <x-icon name="o-chat-bubble-bottom-center-text" wire:click="toggleComments" />
+            {{ $task->comments->count() }}
+        </div>
+        @if($showFiles)
+
         <div class="overflow-x-auto">
             <table class="table">
                 <!-- head -->
@@ -266,76 +362,74 @@ public function changeStatus()
                 </tbody>
             </table>
         </div>
-
-        <hr class="my-6">
-        <div class="mt-4">
-            <label for="comment" class="block text-sm font-medium text-gray-700">Comment</label>
-            <x-textarea
-            label="Leave Comment"
-            wire:model="comment"
-            placeholder=""
-            hint="Max 1000 chars"
-            rows="5"
-            inline />
-            @error('comment') <span class="text-red-500">{{ $message }}</span> @enderror
-        </div>
-        <!-- Add this button to trigger the saveComment method -->
-<x-button wire:click="saveComment" class="mt-4" spinner>
-    Save Comment
-</x-button>
-<div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
-    <hr class="my-6">
-
-    <div class="mb-4 ">
-        <header class="mb-4">Comments</header>
-
-        @if($comments->count() > 0)
-            @foreach ($comments as $comment)
-            <x-list-item :item="$comments" no-separator no-hover>
-                <x-slot:avatar>
-                @php
-                    $userName = $comment->user->fullname;
-                    $firstAlphabet = strtoupper(substr($userName, 0, 1));
-                    $lastAlphabet = strtoupper(substr($userName, -1));
-                @endphp
-                <x-badge value="{{ $firstAlphabet }}{{ $lastAlphabet }}" class="badge-primary text-uppercase" />                
-                </x-slot:avatar>
-                <x-slot:value>
-                    {{ $comment->user->fullname }}: <x-icon name="s-calendar-days"  /> <strong>{{ $comment->created_at->diffForHumans() }}</strong>-({{$comment->created_at}})
-                </x-slot:value>
-                <x-slot:sub-value>
-                    {{ $comment->comment }}
-                </x-slot:sub-value>
-                <x-slot:actions>
-                    <x-button icon="o-trash" class="text-red-500" wire:click="deleteComment({{ $comment->id }})" spinner />
-
-            </x-slot:actions>
-            </x-list-item>  
-            @endforeach
-        @else
-            <p>No comments available.</p>
         @endif
-    </div>
+     
        
-    </div>
-</div>
-
-<script>
-    function confirmDelete(fileId) {
-        var confirmDelete = confirm("Are you sure you want to delete this file?");
-        if (confirmDelete) {
-            Livewire.emit('confirmDelete', fileId); // Emit Livewire event with file ID
-        }
-    }
-    
-</script>
-<script>
-    function confirmDelete(commentId) {
-        var confirmDelete = confirm("Are you sure you want to delete this comment?");
-        if (confirmDelete) {
-            Livewire.emit('confirmDelete', commentId); // Emit Livewire event with comment ID
-        }
-    }
-</script>
-
-
+        @if($showComments)
+            <hr class="my-6">
+            <div class="mt-4">
+                <label for="comment" class="block text-sm font-medium text-gray-700">Comment</label>
+                <x-textarea
+                    label="Leave Comment"
+                    wire:model="comment"
+                    placeholder=""
+                    hint="Max 1000 chars"
+                    rows="5"
+                    inline
+                />
+                @error('comment') <span class="text-red-500">{{ $message }}</span> @enderror
+            </div>
+            <!-- Add this button to trigger the saveComment method -->
+            <x-button wire:click="saveComment" class="mt-4" spinner>
+                Save Comment
+            </x-button>
+        
+            <div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
+                <hr class="my-6">
+                <div class="mb-4 ">
+                    <header class="mb-4">Comments</header>
+                    @if($comments->count() > 0)
+                        @foreach ($comments as $comment)
+                            <x-list-item :item="$comments" no-separator no-hover>
+                                <x-slot:avatar>
+                                    @php
+                                        $userName = $comment->user->fullname;
+                                        $firstAlphabet = strtoupper(substr($userName, 0, 1));
+                                        $lastAlphabet = strtoupper(substr($userName, -1));
+                                    @endphp
+                                    <x-badge value="{{ $firstAlphabet }}{{ $lastAlphabet }}" class="badge-primary text-uppercase" />                
+                                </x-slot:avatar>
+                                <x-slot:value>
+                                    {{ $comment->user->fullname }}: <x-icon name="s-calendar-days"  /> <strong>{{ $comment->created_at->diffForHumans() }}</strong>-({{$comment->created_at}})
+                                </x-slot:value>
+                                <x-slot:sub-value>
+                                    {{ $comment->comment }}
+                                </x-slot:sub-value>
+                                <x-slot:actions>
+                                    <x-button icon="o-trash" class="text-red-500" wire:click="deleteComment({{ $comment->id }})" spinner />
+                                </x-slot:actions>
+                            </x-list-item>
+                        @endforeach
+                    @else
+                        <p>No comments available.</p>
+                    @endif
+                </div>
+            </div>
+        @endif
+        
+        <script>
+            
+            function confirmDelete(fileId) {
+                var confirmDelete = confirm("Are you sure you want to delete this file?");
+                if (confirmDelete) {
+                    Livewire.emit('confirmDelete', fileId); // Emit Livewire event with file ID
+                }
+            }
+            function confirmDelete(commentId) {
+                var confirmDelete = confirm("Are you sure you want to delete this comment?");
+                if (confirmDelete) {
+                    Livewire.emit('confirmDelete', commentId); // Emit Livewire event with comment ID
+                }
+            }
+            
+        </script>

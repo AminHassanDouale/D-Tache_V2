@@ -10,8 +10,6 @@
     max-width: 96rem; /* or any other width you prefer */
 }
        </style>
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
-  <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js"></script>
 
 
         {{-- Sortable.js --}}
@@ -24,13 +22,15 @@
 
         <!-- Scripts -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-
+   {{-- PhotoSwipe --}}
+   <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.3/dist/umd/photoswipe.umd.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/photoswipe@5.4.3/dist/umd/photoswipe-lightbox.umd.min.js"></script>
+   <link href="https://cdn.jsdelivr.net/npm/photoswipe@5.4.3/dist/photoswipe.min.css" rel="stylesheet">
 
         
         @livewireStyles
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <x-rich-text-trix-styles />
 
     </head>
     <body class="font-sans antialiased">

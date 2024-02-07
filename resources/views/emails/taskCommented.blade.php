@@ -143,7 +143,7 @@
 
                         <p
                             style="font-size: 15px; line-height: 24px; font-family: 'Helvetica', Arial, sans-serif; font-weight: 400; text-decoration: none; color: #919293;">
-                            Veuillez recevoir cet email comme notification de la tâche intitulé "{{ $task->name }}" et lien avec le projet {{ $task->project->name }}, il ya une nouveau commentaire " {{ $comment }} " et appartient au Projet <span class="text-underline">{{ $project->name }}</span>.
+                            Veuillez recevoir cet email comme notification de la tâche intitulé "{{ $task->name }}" , il ya une nouveau commentaire " {{ $comment }} ".
                             Merci
 
 
