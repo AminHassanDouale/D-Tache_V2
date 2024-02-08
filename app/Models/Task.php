@@ -57,6 +57,9 @@ public function user()
    public function comments()
     {
         return $this->morphMany(Comment::class, 'model');
+    }public function histories()
+    {
+        return $this->morphMany(History::class, 'model');
     }
    
 

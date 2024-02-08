@@ -7,9 +7,10 @@ use App\Models\File;
 use App\Models\Status;
 use App\Models\User;
 use App\Models\Comment;
+use App\Models\History; 
 use App\Models\Department;
 use Illuminate\Support\Facades\Auth;
-use Livewire\WithFileUploads;  // Required for file uploads
+use Livewire\WithFileUploads;  
 use App\Models\Project;
 use Carbon\Carbon;
 use App\Mail\TaskCommented;
@@ -34,8 +35,13 @@ new #[Layout('layouts.app')] class extends Component {
     public $status_id;
     public $comment;
     public $priority;
+    public $histories;
     public $statuses;
     public $users;
+    public $start_date;
+    public $due_date;
+    public $confirmingFileDeletion = false;
+    public $fileToDeleteId;
     public $tags = [];
     public $fileToDelete;
     public $projects;
@@ -49,6 +55,7 @@ new #[Layout('layouts.app')] class extends Component {
     ];
     public $showComments = false;
     public $showFiles = false;
+    public $showHistories = false;
     public function mount(Task $task)
     {
         $this->task = $task;
@@ -77,18 +84,18 @@ new #[Layout('layouts.app')] class extends Component {
 public function saveComment()
 {
     $validatedData = $this->validate([
-        'comment' => 'required|string|max:255', // Validate the new comment
+        'comment' => 'required|string|max:255', 
     ]);
 
-    // Assuming you have a Comment model
     $this->task->comments()->create([
         'comment' => $this->comment,
         'user_id' => Auth::id(), 
         'department_id' => Auth::user()->department_id,
         'date' => now(),
     ]);
+    $this->logHistory('Comment added', $this->task->id, Task::class);
 
-    // Clear the comment input after saving
+
     $this->comment = '';
     $this->task->load('comments'); 
 
@@ -111,28 +118,21 @@ if ($taskAssignee && $taskAssignee->id !== $taskOwner->id) {
 } 
     $this->comments = $this->task->comments()->orderBy('created_at')->get();
 
-    // You can add a toast or any other notification here
     $this->toast('success', 'Comment added successfully.');
 }
 
 
-public function deleteFile($fileId)
-{
-    if ($this->fileToDelete) {
-        $file = File::find($this->fileToDelete);
-        if ($file) {
-            $file->delete();
-            $this->fileToDelete = null; 
-        }
-    }
-  
-    
-    $this->toast('success', 'File deleted successfully.');
-}
-
 public function toggleComments()
 {
     $this->showComments = !$this->showComments;
+}
+public function toggleHistories()
+{
+    $this->showHistories = !$this->showHistories;
+    
+    if ($this->showHistories) {
+        $this->histories = $this->task->histories()->orderBy('created_at')->get();
+    }
 }
 public function toggleFiles()
 {
@@ -171,6 +171,8 @@ public function changeTaskName()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Name updated', $this->task->id, Task::class);
+
 }
 public function changeTaskDescription()
 {
@@ -188,6 +190,8 @@ public function changeTaskDescription()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Description updated', $this->task->id, Task::class);
+
 }
 
 public function changeStatus()
@@ -207,6 +211,8 @@ public function changeStatus()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Status updated', $this->task->id, Task::class);
+
     }
     public function changePriority()
     {
@@ -223,7 +229,52 @@ public function changeStatus()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Priority updated', $this->task->id, Task::class);
+
     }
+    public function updateStartDate($newStartDate)
+{
+    $startDate = Carbon::parse($newStartDate);
+    
+    $this->task->update(['start_date' => $startDate]);
+
+    $this->loadTaskProperties();
+
+    $this->toast(
+        type: 'warning',
+        title: 'Start Date Updated!',
+        description: null,
+        position: 'toast-bottom toast-end',
+        icon: 'o-information-circle',
+        css: 'alert-warning',
+        timeout: 3000,
+        redirectTo: null
+    );
+
+    $this->logHistory('Start date updated', $this->task->id, Task::class);
+}
+
+public function updateEndDate($newEndDate)
+{
+    $endDate = Carbon::parse($newEndDate);
+    
+    $this->task->update(['due_date' => $endDate]);
+
+    $this->loadTaskProperties();
+
+    $this->toast(
+        type: 'warning',
+        title: 'End Date Updated!',
+        description: null,
+        position: 'toast-bottom toast-end',
+        icon: 'o-information-circle',
+        css: 'alert-warning',
+        timeout: 3000,
+        redirectTo: null
+    );
+
+    $this->logHistory('End date updated', $this->task->id, Task::class);
+}
     public function changeAssignee()
     {
         $this->task->update(['assignee_id' => $this->assignee_id]);
@@ -240,6 +291,8 @@ public function changeStatus()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Assignee updated', $this->task->id, Task::class);
+
     }
     public function changeProject()
     {
@@ -256,9 +309,58 @@ public function changeStatus()
             timeout: 3000,                      // optional (ms)
             redirectTo: null                    // optional (uri)
         );
+        $this->logHistory('Project updated', $this->task->id, Task::class);
+
     }
 
+    private function logHistory($action, $modelId, $modelType)
+    {
+        History::create([
+            'action' => $action,
+            'model_id' => $modelId,
+            'model_type' => $modelType,
+            'date' => now(),
+            'name' => $this->name, 
+            'department_id' => Auth::user()->department_id,
+            'user_id' => Auth::id(),
+        ]);
+    }
+    public function confirmFileDeletion($fileId)
+{
+    $this->fileToDeleteId = $fileId;
+    $this->confirmingFileDeletion = true;
+}
 
+public function deleteFileConfirmed()
+{
+    $file = File::find($this->fileToDeleteId);
+    
+    if ($file) {
+        $file->delete();
+        $this->toast(
+            type: 'danger',
+            title: 'Deleted File!',
+            description: null,                  // optional (text)
+            position: 'toast-bottom toast-start',    // optional (daisyUI classes)
+            icon: 'o-information-circle',       // Optional (any icon)
+            css: 'alert-warning',                  // Optional (daisyUI classes)
+            timeout: 3000,                      // optional (ms)
+            redirectTo: null                    // optional (uri)
+        );
+        $this->logHistory('File dated', $this->task->id, Task::class);
+
+        $this->files = $this->task->files->sortBy('created_at'); 
+    } else {
+        $this->toast('error', 'Unable to delete file.');
+    }
+
+    $this->confirmingFileDeletion = false;
+}
+
+public function deleteFileCancelled()
+{
+    $this->confirmingFileDeletion = false;
+}
 
 }; ?>
 
@@ -295,6 +397,23 @@ public function changeStatus()
                 </select>
             </strong>
             <br>
+
+            <br>
+            @php
+           $config1 = ['altFormat' => 'd/m/Y'];
+          @endphp
+            <strong>
+                <x-datepicker label="Start Date" wire:model.defer="start_date"  wire:change="updateStartDate($event.target.value)" :config="$config1" />
+
+
+            </strong>
+            <br>
+            <br>
+            <strong>
+                <x-datepicker label="Due Date" wire:model.defer="due_date" wire:change="updateEndDate($event.target.value)" :config="$config1" />
+
+            </strong>
+
             <strong>
                 <x-icon name="m-users" /> <select wire:model="assignee_id" wire:change="changeAssignee" id="assignee" name="assignee" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
                     @foreach($users as $user)
@@ -321,12 +440,15 @@ public function changeStatus()
     </div>
     <div class="w-full p-6 overflow-auto bg-white shadow-md md:w-2/4 lg:w2/2">
         <div>
-            <x-icon name="o-document-arrow-up" wire:click="toggleFiles" />
+            <x-icon name="o-paper-clip" wire:click="toggleFiles" class="text-orange-500 w-9 h-9" />
             {{ $task->files->count() }}
        
       
-            <x-icon name="o-chat-bubble-bottom-center-text" wire:click="toggleComments" />
+            <x-icon name="o-chat-bubble-bottom-center-text" class="text-blue-500 w-9 h-9" wire:click="toggleComments" />
             {{ $task->comments->count() }}
+            <x-icon name="s-folder-open" class="text-green-500 w-9 h-9" wire:click="toggleHistories" />
+
+            {{ $task->histories->count() }}
         </div>
         @if($showFiles)
 
@@ -349,7 +471,7 @@ public function changeStatus()
                                     <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}">
                                         <x-icon name="m-arrow-down-on-square" />
                                     </a>
-                                    <x-button wire:click="fileToDelete({{ $file->id }})" onclick="confirmDelete({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner />
+                                    <x-button wire:click="confirmFileDeletion({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner />
 
                                 </td>
                             </tr>
@@ -363,6 +485,22 @@ public function changeStatus()
             </table>
         </div>
         @endif
+
+        @if($confirmingFileDeletion)
+    <!-- Confirmation Modal -->
+    <x-modal>
+        <x-slot name="title">Confirm Deletion</x-slot>
+        <x-slot name="content">
+            Are you sure you want to delete this file?
+        </x-slot>
+            <x-button wire:click="deleteFileConfirmed" class="bg-red-500" spinner>
+                Delete
+            </x-button>
+            <x-button wire:click="deleteFileCancelled" class="bg-gray-500" spinner>
+                Cancel
+            </x-button>
+    </x-modal>
+@endif
      
        
         @if($showComments)
@@ -416,20 +554,24 @@ public function changeStatus()
                 </div>
             </div>
         @endif
+
+        @if($showHistories)
+    <div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
+        <hr class="my-6">
+        <div class="mb-4 ">
+            <header class="mb-4">Task Histories</header>
+            @if($histories->count() > 0)
+
+
+                @foreach ($histories as $history)
+                    <x-timeline-item title="{{ $history->action }}" subtitle="{{ $history->created_at->diffForHumans() }}" description="by {{ $history->user->fullname }}" />
+                @endforeach
+            @else
+                <p>No task histories available.</p>
+            @endif
+        </div>
+    </div>
+@endif
+
+
         
-        <script>
-            
-            function confirmDelete(fileId) {
-                var confirmDelete = confirm("Are you sure you want to delete this file?");
-                if (confirmDelete) {
-                    Livewire.emit('confirmDelete', fileId); // Emit Livewire event with file ID
-                }
-            }
-            function confirmDelete(commentId) {
-                var confirmDelete = confirm("Are you sure you want to delete this comment?");
-                if (confirmDelete) {
-                    Livewire.emit('confirmDelete', commentId); // Emit Livewire event with comment ID
-                }
-            }
-            
-        </script>
