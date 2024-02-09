@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
@@ -65,6 +67,33 @@ Route::view('profile', 'profile')
     //users
     Route::resource('users', UserController::class);
 
+
+
+
+    //role 
+    Route::get('roles', [RoleController::class, 'index'])->name('admin.roles.index');
+Route::get('roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
+Route::post('roles', [RoleController::class, 'store'])->name('admin.roles.store');
+Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
+Route::put('roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+
+//Permission
+
+Route::get('permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
+Route::get('permissions/create', [PermissionController::class, 'create'])->name('admin.permissions.create');
+Route::post('permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
+Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])->name('admin.permissions.edit');
+Route::put('permissions/{permission}', [PermissionController::class, 'update'])->name('admin.permissions.update');
+
+Route::post('/roles/{role}/permissions', [RoleController::class, 'givePermission'])->name('admin.roles.permissions');
+Route::delete('/roles/{role}/permissions/{permission}', [RoleController::class, 'revokePermission'])->name('admin.roles.permissions.revoke');
+//Route::resource('/permissions', PermissionController::class);
+Route::post('/permissions/{permission}/roles', [PermissionController::class, 'assignRole'])->name('admin.permissions.roles');
+Route::delete('/permissions/{permission}/roles/{role}', [PermissionController::class, 'removeRole'])->name('admin.permissions.roles.remove');
+Route::post('/users/{user}/roles', [UserController::class, 'assignRole'])->name('users.roles');
+Route::delete('/users/{user}/roles/{role}', [UserController::class, 'removeRole'])->name('users.roles.remove');
+Route::post('/users/{user}/permissions', [UserController::class, 'givePermission'])->name('users.permissions');
+Route::delete('/users/{user}/permissions/{permission}', [UserController::class, 'revokePermission'])->name('users.permissions.revoke');
 //AddTaskfile 
 Route::post('/upload-files/{task}', [FileController::class, 'store'])->name('file.store');
 //AddProjectFile

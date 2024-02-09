@@ -54,16 +54,6 @@
       
 
         @livewireScripts
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                Livewire.on('openTaskDetailsModal', () => {
-                    modal17.showModal(); // Use consistent modal name
-                });
-        
-                Livewire.on('closeTaskDetailsModal', () => {
-                    modal17.close(); // Use consistent modal name
-                });
-            });
-        </script>
+      
     </body>
 </html>

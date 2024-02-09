@@ -17,6 +17,7 @@
         "mkocansey/bladewind": "^2.4",
         "robsontenorio/mary": "^1.20",
         "spatie/laravel-activitylog": "^4.7",
+        "spatie/laravel-permission": "^6.3",
         "tonysm/rich-text-laravel": "^1.7"
     },
     "require-dev": {

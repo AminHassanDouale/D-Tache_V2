@@ -47,14 +47,20 @@ new class extends Component
                         {{ __('Tasks') }}
                     </x-nav-link>
                 </div>
+                @role('admin')
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.index')" wire:navigate>
                         {{ __('Categories') }}
                     </x-nav-link>
                 </div>
+                @endrole
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')" wire:navigate>
                         {{ __('Users') }}
+                    </x-nav-link><x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.index')" wire:navigate>
+                        {{ __('Roles') }}
+                    </x-nav-link><x-nav-link :href="route('admin.permissions.index')" :active="request()->routeIs('admin.permissions.index')" wire:navigate>
+                        {{ __('Permission') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -75,6 +81,7 @@ new class extends Component
                     </x-slot>
 
                     <x-slot name="content">
+                        
                         <x-dropdown-link :href="route('profile')" wire:navigate>
                             {{ __('Profile') }}
                         </x-dropdown-link>
