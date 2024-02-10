@@ -57,10 +57,15 @@ new class extends Component
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')" wire:navigate>
                         {{ __('Users') }}
-                    </x-nav-link><x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.index')" wire:navigate>
+                    </x-nav-link>
+                    <x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.index')" wire:navigate>
                         {{ __('Roles') }}
-                    </x-nav-link><x-nav-link :href="route('admin.permissions.index')" :active="request()->routeIs('admin.permissions.index')" wire:navigate>
+                    </x-nav-link>
+                    <x-nav-link :href="route('admin.permissions.index')" :active="request()->routeIs('admin.permissions.index')" wire:navigate>
                         {{ __('Permission') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('report.department')" :active="request()->routeIs('report.department')" wire:navigate>
+                        {{ __('Report') }}
                     </x-nav-link>
                 </div>
             </div>

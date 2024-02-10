@@ -60,12 +60,18 @@ Route::view('profile', 'profile')
 
 
     //categories
-
     Route::resource('categories', CategoryController::class);
-
-
     //users
     Route::resource('users', UserController::class);
+    //Report
+    Route::view('report', 'reports.report')
+    ->middleware(['auth', 'verified'])
+    ->name('report');
+    Route::view('report/department', 'reports.department')
+    ->middleware(['auth', 'verified'])
+    ->name('report.department');
+
+
 
 
 
