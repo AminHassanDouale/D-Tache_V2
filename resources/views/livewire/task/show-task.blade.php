@@ -213,6 +213,7 @@ public function changeStatus()
         );
         $this->logHistory('Status updated', $this->task->id, Task::class);
 
+
     }
     public function changePriority()
     {
@@ -365,12 +366,73 @@ public function deleteFileCancelled()
 }; ?>
 
 
-<div class="flex flex-col items-center px-4 pt-4 md:flex-row md:items-start md:px-20 md:pt-20">
-    <div class="w-full mb-4 md:w-1/2 lg:w-1/4 rounded-xl md:mr-4">
+<div>
+    <main class="grid items-start grid-cols-1 gap-4 px-4 pt-4 md:grid-cols-2 md:px-20 md:pt-20">
 
-        <x-card title="Task Detail" subtitle=" " separator progress-indicator shadow>
-            <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" :value="$task->name" wire:keydown.enter="changeTaskName" />
-              <br>
+        <aside class="">
+        
+            <div class="p-10 bg-white rounded-lg shadow">
+                <div class="flex flex-col items-center gap-1 text-center">
+                    <img class="w-32 h-32 p-2 mb-4 bg-white rounded-full shadow" src="https://cdn.dribbble.com/users/2071065/screenshots/5746865/dribble_2-01.png" alt="">
+                    <p class="font-semibold">{{ $task->user->fullname }}</p>
+                    <div class="flex items-center justify-center text-sm leading-normal text-gray-400">
+                    <svg viewBox="0 0 24 24" class="mr-1" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    {{ $task->department->name }}
+                    </div>
+                   
+                </div>
+                
+            </div>
+    
+            <div class="p-6 mt-6 bg-white rounded-lg shadow">
+                <h3 class="mb-4 text-sm font-semibold text-gray-600">Status</h3>
+                    
+                        <select wire:model="status_id" wire:change="changeStatus" id="status" name="status" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+                            @foreach($statuses as $status)
+                                <option value="{{ $status->id }}">{{ $status->name }}</option>
+                            @endforeach
+                        </select>
+                   
+    
+            </div><div class="p-6 mt-6 bg-white rounded-lg shadow">
+                <h3 class="mb-4 text-sm font-semibold text-gray-600">Priorite</h3>
+                    
+                <select wire:model="priority" wire:change="changePriority" id="priority" name="priority" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+                    @foreach($priorities as $priorityOption)
+                        <option value="{{ $priorityOption['value'] }}">{{ $priorityOption['label'] }}</option>
+                    @endforeach
+                </select>
+            </div><div class="p-6 mt-6 bg-white rounded-lg shadow">
+                @php
+                $config1 = ['altFormat' => 'd/m/Y'];
+               @endphp
+                 <x-datepicker label="Start Date" wire:model.defer="start_date"  wire:change="updateStartDate($event.target.value)" :config="$config1" />
+            </div>
+            <div class="p-6 mt-6 bg-white rounded-lg shadow">
+                <x-datepicker label="Due Date" wire:model.defer="due_date" wire:change="updateEndDate($event.target.value)" :config="$config1" />
+            </div>
+            <div class="p-6 mt-6 bg-white rounded-lg shadow">
+                <h3 class="mb-4 text-sm font-semibold text-gray-600">Project</h3>
+                <select wire:model="project_id" wire:change="changeProject" id="project" name="project" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted>
+                    @foreach($projects as $project)
+                        <option value="{{ $project->id }}">{{ $project->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="p-6 mt-6 bg-white rounded-lg shadow">
+                <h3 class="mb-4 text-sm font-semibold text-gray-600">Assigne</h3>
+                <select wire:model="assignee_id" wire:change="changeAssignee" id="assignee" name="assignee" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}">{{ $user->fullname }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </aside>
+    
+        <article class="">
+            <div class="p-4 mb-6 bg-white rounded-lg shadow md:mt-1">
+                <x-input label="Task Name" wire:model.defer="name" placeholder="Enter task name" :value="$task->name" wire:keydown.enter="changeTaskName" />
+                    <br>
                 <x-textarea
                 label="Task Description"
                 wire:model.defer="description"
@@ -379,199 +441,98 @@ public function deleteFileCancelled()
                 wire:keydown.enter="changeTaskDescription"
                 rows="5"
                 inline
-            />
-         
-    <x-icon name="m-bell-alert" />
-    Status: <select wire:model="status_id" wire:change="changeStatus" id="status" name="status" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
-        @foreach($statuses as $status)
-            <option value="{{ $status->id }}">{{ $status->name }}</option>
-        @endforeach
-    </select>
-</strong>
-            <br>
-            <strong>
-             Priority:   <select wire:model="priority" wire:change="changePriority" id="priority" name="priority" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
-                    @foreach($priorities as $priorityOption)
-                        <option value="{{ $priorityOption['value'] }}">{{ $priorityOption['label'] }}</option>
-                    @endforeach
-                </select>
-            </strong>
-            <br>
-
-            <br>
-            @php
-           $config1 = ['altFormat' => 'd/m/Y'];
-          @endphp
-            <strong>
-                <x-datepicker label="Start Date" wire:model.defer="start_date"  wire:change="updateStartDate($event.target.value)" :config="$config1" />
-
-
-            </strong>
-            <br>
-            <br>
-            <strong>
-                <x-datepicker label="Due Date" wire:model.defer="due_date" wire:change="updateEndDate($event.target.value)" :config="$config1" />
-
-            </strong>
-
-            <strong>
-                <x-icon name="m-users" /> <select wire:model="assignee_id" wire:change="changeAssignee" id="assignee" name="assignee" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted" >
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->fullname }}</option>
-                    @endforeach
-                </select>
-            </strong>
-            <br>
-            <strong>  </strong>
-            <strong>
-                <x-icon name="m-tag" />
-                Project: <select wire:model="project_id" wire:change="changeProject" id="project" name="project" class="block w-full mt-1 border-0 border-solid divide-y divide-blue-200 rounded shadow hover:border-dotted>
-                    @foreach($projects as $project)
-                        <option value="{{ $project->id }}">{{ $project->name }}</option>
-                    @endforeach
-                </select>
-            </strong>
-            <div>
-
-
+            />                
             </div>
+            <form class="p-4 mb-6 space-y-2 rounded-lg shadow">
+                @if($files->count() > 0)
+                @foreach ($files as $file)
+                    
+                
+                <div class="flex w-full items-center justify-between rounded-2xl bg-white p-3 shadow-3xl shadow-shadow-500 dark:!bg-navy-700 dark:shadow-none">
+                    <div class="flex items-center">
+                    <div class="">
+                        <img
+                        class="h-[83px] w-[83px] rounded-lg"
+                        src="https://cdn.dribbble.com/users/1397292/screenshots/16139947/media/8e4fd02616f0e1053030b7c9bc9559b5.png?resize=1600x1200&vertical=center"
+                        alt=""
+                        />
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-base font-medium text-navy-700 dark:text-white">
+                        {{ $file->filename }}
+                        </p>
+                        @php
+                         $sizeInMB = round($file->size / (1024 * 1024), 2); 
+                    @endphp
+                        <p class="mt-2 text-sm text-gray-600">
+                            {{ $sizeInMB }} MB
 
-        </x-card>
-    </div>
-    <div class="w-full p-6 overflow-auto bg-white shadow-md md:w-2/4 lg:w2/2">
-        <div>
-            <x-icon name="o-paper-clip" wire:click="toggleFiles" class="text-orange-500 w-9 h-9" />
-            {{ $task->files->count() }}
-       
-      
-            <x-icon name="o-chat-bubble-bottom-center-text" class="text-blue-500 w-9 h-9" wire:click="toggleComments" />
-            {{ $task->comments->count() }}
-            <x-icon name="s-folder-open" class="text-green-500 w-9 h-9" wire:click="toggleHistories" />
+                            <a
+                            class="ml-1 font-medium text-brand-500 hover:text-brand-500 dark:text-white"
+                            href=" "
+                        >
+                        </a>
+                        </p>
+                    </div>
+                    </div>
+                    <div class="flex items-center justify-center mr-4 text-gray-600 dark:text-white">
+                        <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}">
+                            <x-icon name="m-arrow-down-on-square" />
+                        </a>
+                        <x-button wire:click="confirmFileDeletion({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner />
 
-            {{ $task->histories->count() }}
-        </div>
-        @if($showFiles)
-
-        <div class="overflow-x-auto">
-            <table class="table">
-                <!-- head -->
-                <thead>
-                    <tr>
-                        <th>File Name</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if($files->count() > 0)
-                        @foreach ($files as $file)
-                            <!-- row -->
-                            <tr>
-                                <td>{{ $file->name }}</td>
-                                <td>
-                                    <a href="{{ Storage::url($file->file_path) }}" download="{{ $file->name }}">
-                                        <x-icon name="m-arrow-down-on-square" />
-                                    </a>
-                                    <x-button wire:click="confirmFileDeletion({{ $file->id }})" icon="o-trash" class="bg-red-500" spinner />
-
-                                </td>
-                            </tr>
-                        @endforeach
-                    @else
+                    </div>
+                </div>
+                @endforeach
+                @else
                         <tr>
                             <td colspan="2" class="text-center">No files available.</td>
                         </tr>
                     @endif
-                </tbody>
-            </table>
-        </div>
-        @endif
-
-        @if($confirmingFileDeletion)
-    <!-- Confirmation Modal -->
-    <x-modal>
-        <x-slot name="title">Confirm Deletion</x-slot>
-        <x-slot name="content">
-            Are you sure you want to delete this file?
-        </x-slot>
-            <x-button wire:click="deleteFileConfirmed" class="bg-red-500" spinner>
-                Delete
-            </x-button>
-            <x-button wire:click="deleteFileCancelled" class="bg-gray-500" spinner>
-                Cancel
-            </x-button>
-    </x-modal>
-@endif
-     
-       
-        @if($showComments)
-            <hr class="my-6">
-            <div class="mt-4">
-                <label for="comment" class="block text-sm font-medium text-gray-700">Comment</label>
-                <x-textarea
-                    label="Leave Comment"
-                    wire:model="comment"
-                    placeholder=""
-                    hint="Max 1000 chars"
-                    rows="5"
-                    inline
-                />
-                @error('comment') <span class="text-red-500">{{ $message }}</span> @enderror
-            </div>
-            <!-- Add this button to trigger the saveComment method -->
-            <x-button wire:click="saveComment" class="mt-4" spinner>
-                Save Comment
-            </x-button>
-        
-            <div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
-                <hr class="my-6">
-                <div class="mb-4 ">
-                    <header class="mb-4">Comments</header>
-                    @if($comments->count() > 0)
-                        @foreach ($comments as $comment)
-                            <x-list-item :item="$comments" no-separator no-hover>
-                                <x-slot:avatar>
-                                    @php
-                                        $userName = $comment->user->fullname;
-                                        $firstAlphabet = strtoupper(substr($userName, 0, 1));
-                                        $lastAlphabet = strtoupper(substr($userName, -1));
-                                    @endphp
-                                    <x-badge value="{{ $firstAlphabet }}{{ $lastAlphabet }}" class="badge-primary text-uppercase" />                
-                                </x-slot:avatar>
-                                <x-slot:value>
-                                    {{ $comment->user->fullname }}: <x-icon name="s-calendar-days"  /> <strong>{{ $comment->created_at->diffForHumans() }}</strong>-({{$comment->created_at}})
-                                </x-slot:value>
-                                <x-slot:sub-value>
-                                    {{ $comment->comment }}
-                                </x-slot:sub-value>
-                                <x-slot:actions>
-                                    <x-button icon="o-trash" class="text-red-500" wire:click="deleteComment({{ $comment->id }})" spinner />
-                                </x-slot:actions>
-                            </x-list-item>
-                        @endforeach
-                    @else
+            </form>
+            <div class="mb-6 bg-white rounded-lg shadow">
+                <div class="border-b border-gray-100"></div>
+                <div class="flex w-full border-t border-gray-100">
+                    <div class="flex flex-row mx-5 mt-3 text-xs">
+                        <div class="flex items-center mb-2 mr-4 font-normal text-gray-700 rounded-md">Comments:<div class="ml-1 text-gray-400 text-ms"> {{ $task->comments->count() }}</div></div>
+                    </div>
+                </div>
+                @if($comments->count() > 0)
+                @foreach ($task->comments as $comment)
+                <div class="flex p-4 antialiased text-black">
+                    <img class="w-8 h-8 mt-1 mr-2 rounded-full " src="https://cdn.dribbble.com/users/2071065/screenshots/5746865/dribble_2-01.png">
+                    <div>
+                        <div class="bg-gray-100 rounded-lg px-4 pt-2 pb-2.5">
+                            <div class="text-sm font-semibold leading-relaxed">{{ $comment->user->username }}</div>
+                            <div class="text-xs leading-snug md:leading-normal">{{ $comment->comment }}.</div>
+                        </div>
+                        <div class="text-xs  mt-0.5 text-gray-500">{{ $task->created_at->diffForHumans() }}</div>
+                    </div>
+                </div>
+                @endforeach
+                @else
                         <p>No comments available.</p>
-                    @endif
+                @endif
+
+                <div class="relative flex items-center self-center w-full max-w-xl p-4 overflow-hidden text-gray-600 focus-within:text-gray-400">
+                    
+                    <img class="object-cover w-10 h-10 mr-2 rounded-full shadow cursor-pointer" alt="User avatar" src="https://cdn.dribbble.com/users/2071065/screenshots/5746865/dribble_2-01.png">
+                    <span class="absolute inset-y-0 right-0 flex items-center pr-6">
+                        <button type="submit" wire:click="saveComment" class="p-1 focus:outline-none focus:shadow-none hover:text-blue-500" spinner>
+                        <svg class="w-6 h-6 text-gray-400 transition duration-300 ease-out hover:text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <x-icon name="o-paper-airplane"  />
+                        </svg>
+                        </button>
+                    </span>
+                        <input type="search" wire:model="comment" class="w-full py-2 pl-4 pr-10 text-sm placeholder-gray-400 bg-gray-100 border border-transparent appearance-none rounded-tg" style="border-radius: 25px" placeholder="Post a comment..." autocomplete="off">
                 </div>
             </div>
-        @endif
-
-        @if($showHistories)
-    <div class="w-full p-6 overflow-auto md:w-3/4 lg:w2/2">
-        <hr class="my-6">
-        <div class="mb-4 ">
-            <header class="mb-4">Task Histories</header>
-            @if($histories->count() > 0)
-
-
-                @foreach ($histories as $history)
-                    <x-timeline-item title="{{ $history->action }}" subtitle="{{ $history->created_at->diffForHumans() }}" description="by {{ $history->user->fullname }}" />
-                @endforeach
-            @else
-                <p>No task histories available.</p>
-            @endif
-        </div>
-    </div>
-@endif
-
-
+    
+            
+                    
+    
+        </article>
         
+    </main>
+  
+</div>

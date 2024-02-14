@@ -66,7 +66,7 @@ class UserController extends Controller
         $departments = Department::all();
         $roles = Role::all();
 
-        return view('users.edit', compact('user', 'departments'));
+        return view('users.edit', compact('user', 'departments','roles'));
     }
 
     /**

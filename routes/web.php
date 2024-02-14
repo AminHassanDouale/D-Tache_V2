@@ -29,6 +29,9 @@ Route::view('dashboard', 'dashboard')
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
+Route::view('history', 'history')
+    ->middleware(['auth'])
+    ->name('history');
 
     // Project Index Page
     Route::view('projects', 'projects.index')
@@ -70,7 +73,10 @@ Route::view('profile', 'profile')
     Route::view('report/department', 'reports.department')
     ->middleware(['auth', 'verified'])
     ->name('report.department');
-
+    Route::view('report/dashboard', 'report.dashboard')
+    ->middleware(['auth', 'verified'])
+    ->name('report.dashboard');
+ 
 
 
 
@@ -78,13 +84,12 @@ Route::view('profile', 'profile')
 
     //role 
     Route::get('roles', [RoleController::class, 'index'])->name('admin.roles.index');
-Route::get('roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
-Route::post('roles', [RoleController::class, 'store'])->name('admin.roles.store');
-Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
-Route::put('roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+    Route::get('roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
+    Route::post('roles', [RoleController::class, 'store'])->name('admin.roles.store');
+    Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
+    Route::put('roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
 
 //Permission
-
 Route::get('permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
 Route::get('permissions/create', [PermissionController::class, 'create'])->name('admin.permissions.create');
 Route::post('permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
