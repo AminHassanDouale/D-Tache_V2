@@ -506,7 +506,7 @@ public function deleteFileCancelled()
                             <div class="text-sm font-semibold leading-relaxed">{{ $comment->user->username }}</div>
                             <div class="text-xs leading-snug md:leading-normal">{{ $comment->comment }}.</div>
                         </div>
-                        <div class="text-xs  mt-0.5 text-gray-500">{{ $task->created_at->diffForHumans() }}</div>
+                        <div class="text-xs  mt-0.5 text-gray-500">{{ $comment->created_at->diffForHumans() }}</div>
                     </div>
                 </div>
                 @endforeach
